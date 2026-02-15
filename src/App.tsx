@@ -6,14 +6,40 @@ import StatusBar from './components/layout/StatusBar';
 import LeagueTable from './components/league/LeagueTable';
 import TeamView from './components/team/TeamView';
 import MatchResult from './components/match/MatchResult';
+import { useGameData } from './hooks/useGameData';
+import { getTeamById } from './utils/dataLoader';
 import type { ViewType } from './types';
 
 function App() {
+  const { teams, loading, error, gameState } = useGameData();
   const [currentView, setCurrentView] = useState<ViewType>('league');
 
   const handleNavigate = (view: 'league' | 'team') => {
     setCurrentView(view);
   };
+
+  if (loading) {
+    return (
+      <AppContainer>
+        <div style={{ color: 'white', padding: 20, textAlign: 'center' }}>
+          Carregando...
+        </div>
+      </AppContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppContainer>
+        <div style={{ color: 'red', padding: 20, textAlign: 'center' }}>
+          Erro: {error}
+        </div>
+      </AppContainer>
+    );
+  }
+
+  const selectedTeam = getTeamById(teams, gameState.selectedTeamId);
+  const teamName = selectedTeam?.name ?? '—';
 
   const renderView = () => {
     switch (currentView) {
@@ -34,7 +60,7 @@ function App() {
       <div style={{ flex: 1, overflow: 'auto', background: 'var(--bg-green)' }}>
         {renderView()}
       </div>
-      <StatusBar teamName="—" round={1} />
+      <StatusBar teamName={teamName} round={gameState.currentRound} />
     </AppContainer>
   );
 }

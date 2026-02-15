@@ -1,0 +1,202 @@
+[
+  {
+    "id": "flamengo",
+    "name": "Flamengo",
+    "shortName": "FLA",
+    "primaryColor": "#c8102e",
+    "secondaryColor": "#000000",
+    "stadium": "Maracanã",
+    "coach": "Filipe Luís",
+    "capacity": 78838
+  },
+  {
+    "id": "palmeiras",
+    "name": "Palmeiras",
+    "shortName": "PAL",
+    "primaryColor": "#006437",
+    "secondaryColor": "#ffffff",
+    "stadium": "Allianz Parque",
+    "coach": "Abel Ferreira",
+    "capacity": 43713
+  },
+  {
+    "id": "botafogo",
+    "name": "Botafogo",
+    "shortName": "BOT",
+    "primaryColor": "#000000",
+    "secondaryColor": "#ffffff",
+    "stadium": "Nilton Santos",
+    "coach": "Artur Jorge",
+    "capacity": 46931
+  },
+  {
+    "id": "fortaleza",
+    "name": "Fortaleza",
+    "shortName": "FOR",
+    "primaryColor": "#004a99",
+    "secondaryColor": "#cc0000",
+    "stadium": "Arena Castelão",
+    "coach": "Juan Pablo Vojvoda",
+    "capacity": 63903
+  },
+  {
+    "id": "internacional",
+    "name": "Internacional",
+    "shortName": "INT",
+    "primaryColor": "#e20e0e",
+    "secondaryColor": "#ffffff",
+    "stadium": "Beira-Rio",
+    "coach": "Roger Machado",
+    "capacity": 50128
+  },
+  {
+    "id": "sao-paulo",
+    "name": "São Paulo",
+    "shortName": "SAO",
+    "primaryColor": "#ff0000",
+    "secondaryColor": "#ffffff",
+    "stadium": "Morumbi",
+    "coach": "Luis Zubeldía",
+    "capacity": 66795
+  },
+  {
+    "id": "corinthians",
+    "name": "Corinthians",
+    "shortName": "COR",
+    "primaryColor": "#ffffff",
+    "secondaryColor": "#000000",
+    "stadium": "Neo Química Arena",
+    "coach": "Ramón Díaz",
+    "capacity": 49205
+  },
+  {
+    "id": "bahia",
+    "name": "Bahia",
+    "shortName": "BAH",
+    "primaryColor": "#003da5",
+    "secondaryColor": "#ec1c24",
+    "stadium": "Arena Fonte Nova",
+    "coach": "Rogério Ceni",
+    "capacity": 47907
+  },
+  {
+    "id": "cruzeiro",
+    "name": "Cruzeiro",
+    "shortName": "CRU",
+    "primaryColor": "#003da5",
+    "secondaryColor": "#ffffff",
+    "stadium": "Mineirão",
+    "coach": "Fernando Diniz",
+    "capacity": 61846
+  },
+  {
+    "id": "vasco-da-gama",
+    "name": "Vasco da Gama",
+    "shortName": "VAS",
+    "primaryColor": "#000000",
+    "secondaryColor": "#ffffff",
+    "stadium": "São Januário",
+    "coach": "Rafael Paiva",
+    "capacity": 21880
+  },
+  {
+    "id": "atletico-mineiro",
+    "name": "Atlético Mineiro",
+    "shortName": "CAM",
+    "primaryColor": "#000000",
+    "secondaryColor": "#ffffff",
+    "stadium": "Arena MRV",
+    "coach": "Gabriel Milito",
+    "capacity": 46000
+  },
+  {
+    "id": "gremio",
+    "name": "Grêmio",
+    "shortName": "GRE",
+    "primaryColor": "#0068ab",
+    "secondaryColor": "#000000",
+    "stadium": "Arena do Grêmio",
+    "coach": "Renato Gaúcho",
+    "capacity": 55662
+  },
+  {
+    "id": "fluminense",
+    "name": "Fluminense",
+    "shortName": "FLU",
+    "primaryColor": "#7b2d3b",
+    "secondaryColor": "#006633",
+    "stadium": "Maracanã",
+    "coach": "Mano Menezes",
+    "capacity": 78838
+  },
+  {
+    "id": "juventude",
+    "name": "Juventude",
+    "shortName": "JUV",
+    "primaryColor": "#00693e",
+    "secondaryColor": "#ffffff",
+    "stadium": "Alfredo Jaconi",
+    "coach": "Jair Ventura",
+    "capacity": 19924
+  },
+  {
+    "id": "vitoria",
+    "name": "Vitória",
+    "shortName": "VIT",
+    "primaryColor": "#e2001a",
+    "secondaryColor": "#000000",
+    "stadium": "Barradão",
+    "coach": "Thiago Carpini",
+    "capacity": 35632
+  },
+  {
+    "id": "athletico-paranaense",
+    "name": "Athletico Paranaense",
+    "shortName": "CAP",
+    "primaryColor": "#af0000",
+    "secondaryColor": "#000000",
+    "stadium": "Ligga Arena",
+    "coach": "Martín Varini",
+    "capacity": 42372
+  },
+  {
+    "id": "bragantino",
+    "name": "Bragantino",
+    "shortName": "BRA",
+    "primaryColor": "#ffffff",
+    "secondaryColor": "#006633",
+    "stadium": "Nabi Abi Chedid",
+    "coach": "Pedro Caixinha",
+    "capacity": 17728
+  },
+  {
+    "id": "cuiaba",
+    "name": "Cuiabá",
+    "shortName": "CUI",
+    "primaryColor": "#c5a000",
+    "secondaryColor": "#006633",
+    "stadium": "Arena Pantanal",
+    "coach": "Bernardo Franco",
+    "capacity": 41112
+  },
+  {
+    "id": "criciuma",
+    "name": "Criciúma",
+    "shortName": "CRI",
+    "primaryColor": "#f5c000",
+    "secondaryColor": "#000000",
+    "stadium": "Heriberto Hülse",
+    "coach": "Cláudio Tencati",
+    "capacity": 19300
+  },
+  {
+    "id": "atletico-goianiense",
+    "name": "Atlético Goianiense",
+    "shortName": "ACG",
+    "primaryColor": "#cc0000",
+    "secondaryColor": "#000000",
+    "stadium": "Antônio Accioly",
+    "coach": "Jair Ventura",
+    "capacity": 12500
+  }
+]
