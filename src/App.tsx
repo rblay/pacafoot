@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import './styles/theme.css';
 import AppContainer from './components/layout/AppContainer';
 import TopMenu from './components/layout/TopMenu';
 import StatusBar from './components/layout/StatusBar';
 import LeagueTable from './components/league/LeagueTable';
 import TeamView from './components/team/TeamView';
-import MatchResult from './components/match/MatchResult';
+import MatchResultView from './components/match/MatchResult';
 import { useGameData } from './hooks/useGameData';
 import { getTeamById, getTeamPlayers } from './utils/dataLoader';
-import type { ViewType, TacticalConfig } from './types';
+import { simulateMatch } from './engine/simulation';
+import { sortLeagueTable } from './utils/storage';
+import type { ViewType, TacticalConfig, MatchResult, LineupSelection } from './types';
 
 function App() {
-  const { teams, players, loading, error, gameState } = useGameData();
+  const { teams, players, loading, error, gameState, setGameState } = useGameData();
   const [currentView, setCurrentView] = useState<ViewType>('league');
+  const [currentMatchResult, setCurrentMatchResult] = useState<MatchResult | null>(null);
 
   const handleNavigate = (view: 'league' | 'team') => {
     setCurrentView(view);
@@ -22,9 +25,90 @@ function App() {
     setCurrentView('team');
   };
 
-  const handlePlay = (_starters: string[], _subs: string[], _tactics: TacticalConfig) => {
-    // Will be wired to match engine in Branch 5
+  const handlePlay = useCallback((starters: string[], subs: string[], _tactics: TacticalConfig) => {
+    const selectedTeam = getTeamById(teams, gameState.selectedTeamId);
+    if (!selectedTeam) return;
+
+    // Pick a random opponent for this round
+    const opponents = teams.filter(t => t.id !== selectedTeam.id);
+    const opponent = opponents[Math.floor(Math.random() * opponents.length)];
+
+    // Build player lineup
+    const playerLineup: LineupSelection = { startingXI: starters, subs };
+
+    // Auto-generate opponent lineup (best 11 by rating)
+    const oppPlayers = getTeamPlayers(players, opponent.id);
+    const oppSorted = [...oppPlayers].sort((a, b) => b.rating - a.rating);
+    const oppStarters = oppSorted.slice(0, 11).map(p => p.id);
+    const oppSubs = oppSorted.slice(11, 18).map(p => p.id);
+    const oppLineup: LineupSelection = { startingXI: oppStarters, subs: oppSubs };
+
+    // Determine home/away (alternate)
+    const isHome = gameState.currentRound % 2 === 1;
+    const homeTeamId = isHome ? selectedTeam.id : opponent.id;
+    const awayTeamId = isHome ? opponent.id : selectedTeam.id;
+    const homePlayers = getTeamPlayers(players, homeTeamId);
+    const awayPlayers = getTeamPlayers(players, awayTeamId);
+    const homeLineup = isHome ? playerLineup : oppLineup;
+    const awayLineup = isHome ? oppLineup : playerLineup;
+    const homeTeam = isHome ? selectedTeam : opponent;
+
+    const result = simulateMatch(
+      homeTeamId, awayTeamId,
+      homePlayers, awayPlayers,
+      homeLineup, awayLineup,
+      gameState.currentRound,
+      homeTeam.stadium,
+      homeTeam.capacity,
+    );
+
+    // Update league table
+    const updatedTable = gameState.leagueTable.map(entry => {
+      if (entry.teamId === homeTeamId) {
+        const won = result.homeScore > result.awayScore;
+        const drawn = result.homeScore === result.awayScore;
+        return {
+          ...entry,
+          played: entry.played + 1,
+          won: entry.won + (won ? 1 : 0),
+          drawn: entry.drawn + (drawn ? 1 : 0),
+          lost: entry.lost + (!won && !drawn ? 1 : 0),
+          goalsFor: entry.goalsFor + result.homeScore,
+          goalsAgainst: entry.goalsAgainst + result.awayScore,
+          points: entry.points + (won ? 3 : drawn ? 1 : 0),
+        };
+      }
+      if (entry.teamId === awayTeamId) {
+        const won = result.awayScore > result.homeScore;
+        const drawn = result.homeScore === result.awayScore;
+        return {
+          ...entry,
+          played: entry.played + 1,
+          won: entry.won + (won ? 1 : 0),
+          drawn: entry.drawn + (drawn ? 1 : 0),
+          lost: entry.lost + (!won && !drawn ? 1 : 0),
+          goalsFor: entry.goalsFor + result.awayScore,
+          goalsAgainst: entry.goalsAgainst + result.homeScore,
+          points: entry.points + (won ? 3 : drawn ? 1 : 0),
+        };
+      }
+      return entry;
+    });
+
+    setGameState({
+      ...gameState,
+      leagueTable: sortLeagueTable(updatedTable),
+      currentRound: gameState.currentRound + 1,
+      matchResults: [...gameState.matchResults, result],
+    });
+
+    setCurrentMatchResult(result);
     setCurrentView('match_result');
+  }, [teams, players, gameState, setGameState]);
+
+  const handleBackFromMatch = () => {
+    setCurrentMatchResult(null);
+    setCurrentView('league');
   };
 
   if (loading) {
@@ -71,16 +155,24 @@ function App() {
           />
         );
       }
-      case 'match_result':
-        return <MatchResult />;
-      default:
+      case 'match_result': {
+        if (!currentMatchResult) return null;
+        const homeTeam = getTeamById(teams, currentMatchResult.homeTeamId);
+        const awayTeam = getTeamById(teams, currentMatchResult.awayTeamId);
+        if (!homeTeam || !awayTeam) return null;
         return (
-          <LeagueTable
-            leagueTable={gameState.leagueTable}
-            teams={teams}
-            onTeamClick={handleTeamClick}
+          <MatchResultView
+            result={currentMatchResult}
+            homeTeam={homeTeam}
+            awayTeam={awayTeam}
+            homePlayers={getTeamPlayers(players, homeTeam.id)}
+            awayPlayers={getTeamPlayers(players, awayTeam.id)}
+            onBack={handleBackFromMatch}
           />
         );
+      }
+      default:
+        return null;
     }
   };
 
