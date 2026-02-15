@@ -1,0 +1,119 @@
+.panel {
+  width: 240px;
+  min-width: 240px;
+  padding: var(--spacing-lg);
+  color: var(--text-light);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  overflow-y: auto;
+}
+
+.teamName {
+  font-size: var(--font-size-xl);
+  font-weight: bold;
+}
+
+.division {
+  font-size: var(--font-size-xs);
+  opacity: 0.8;
+}
+
+.coach {
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sectionLabel {
+  font-size: var(--font-size-xs);
+  font-weight: bold;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.confidenceBar {
+  height: 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+.confidenceFill {
+  height: 100%;
+  background: var(--confidence-bar-fill);
+  transition: width 0.3s;
+}
+
+.confidenceText {
+  position: absolute;
+  top: 0;
+  left: 4px;
+  font-size: 9px;
+  line-height: 14px;
+  color: white;
+}
+
+.nextMatch {
+  background: rgba(0, 0, 0, 0.2);
+  padding: var(--spacing-sm);
+  border-radius: 2px;
+  font-size: var(--font-size-sm);
+}
+
+.tacticalRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.tacticalLabel {
+  font-size: var(--font-size-xs);
+}
+
+.tacticalSelect {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  padding: 2px 4px;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--dropdown-border);
+  width: 100%;
+}
+
+.playButton {
+  font-family: var(--font-family);
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-top: 2px solid var(--btn-border-light);
+  border-left: 2px solid var(--btn-border-light);
+  border-bottom: 2px solid var(--btn-border-dark);
+  border-right: 2px solid var(--btn-border-dark);
+  cursor: pointer;
+  margin-top: auto;
+  text-align: center;
+}
+
+.playButton:hover:not(:disabled) {
+  background: var(--btn-bg-hover);
+}
+
+.playButton:active:not(:disabled) {
+  border-top: 2px solid var(--btn-border-dark);
+  border-left: 2px solid var(--btn-border-dark);
+  border-bottom: 2px solid var(--btn-border-light);
+  border-right: 2px solid var(--btn-border-light);
+}
+
+.playButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

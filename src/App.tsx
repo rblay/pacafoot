@@ -7,11 +7,11 @@ import LeagueTable from './components/league/LeagueTable';
 import TeamView from './components/team/TeamView';
 import MatchResult from './components/match/MatchResult';
 import { useGameData } from './hooks/useGameData';
-import { getTeamById } from './utils/dataLoader';
-import type { ViewType } from './types';
+import { getTeamById, getTeamPlayers } from './utils/dataLoader';
+import type { ViewType, TacticalConfig } from './types';
 
 function App() {
-  const { teams, loading, error, gameState } = useGameData();
+  const { teams, players, loading, error, gameState } = useGameData();
   const [currentView, setCurrentView] = useState<ViewType>('league');
 
   const handleNavigate = (view: 'league' | 'team') => {
@@ -20,6 +20,11 @@ function App() {
 
   const handleTeamClick = (_teamId: string) => {
     setCurrentView('team');
+  };
+
+  const handlePlay = (_starters: string[], _subs: string[], _tactics: TacticalConfig) => {
+    // Will be wired to match engine in Branch 5
+    setCurrentView('match_result');
   };
 
   if (loading) {
@@ -55,8 +60,17 @@ function App() {
             onTeamClick={handleTeamClick}
           />
         );
-      case 'team':
-        return <TeamView />;
+      case 'team': {
+        if (!selectedTeam) return null;
+        const teamPlayers = getTeamPlayers(players, selectedTeam.id);
+        return (
+          <TeamView
+            team={selectedTeam}
+            players={teamPlayers}
+            onPlay={handlePlay}
+          />
+        );
+      }
       case 'match_result':
         return <MatchResult />;
       default:

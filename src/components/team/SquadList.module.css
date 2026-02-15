@@ -1,0 +1,117 @@
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--table-row-even);
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  background: var(--btn-bg);
+  border-bottom: 1px solid var(--tab-border);
+}
+
+.tab {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-sm) var(--spacing-xl);
+  background: var(--tab-inactive-bg);
+  border: 1px solid var(--tab-border);
+  border-bottom: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.tab.active {
+  background: var(--tab-active-bg);
+  font-weight: bold;
+}
+
+.tableScroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+}
+
+.table th {
+  background: #4a7ab5;
+  color: white;
+  font-weight: bold;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  text-align: center;
+  border: 1px solid #3a6aa0;
+  font-size: var(--font-size-xs);
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+}
+
+.table th.nameCol {
+  text-align: left;
+  min-width: 140px;
+}
+
+.table td {
+  padding: 1px var(--spacing-sm);
+  text-align: center;
+  border-bottom: 1px solid var(--table-border);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.table td.nameCol {
+  text-align: left;
+}
+
+.rowEven {
+  background: var(--table-row-even);
+}
+
+.rowOdd {
+  background: var(--table-row-odd);
+}
+
+.selected {
+  background: var(--selected-row) !important;
+  color: var(--selected-row-text);
+}
+
+.energyBar {
+  display: inline-block;
+  width: 40px;
+  height: 8px;
+  background: var(--energy-bar-bg);
+  vertical-align: middle;
+}
+
+.energyFill {
+  height: 100%;
+  background: var(--energy-bar-fill);
+}
+
+.footer {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--statusbar-bg);
+  border-top: 1px solid var(--tab-border);
+  font-size: var(--font-size-sm);
+  display: flex;
+  justify-content: space-between;
+}
+
+.validationError {
+  color: #cc0000;
+  font-weight: bold;
+}
+
+.posG { color: #cc9900; font-weight: bold; }
+.posL { color: #0066cc; font-weight: bold; }
+.posZ { color: #006600; font-weight: bold; }
+.posM { color: #cc6600; font-weight: bold; }
+.posA { color: #cc0000; font-weight: bold; }
