@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Team, Player, GameState, GameSettings } from '../types';
 import { loadTeams, loadPlayers } from '../utils/dataLoader';
 import { loadGame, createDefaultGameState, createDefaultSettings } from '../utils/storage';
+import { setLanguage } from '../locales/i18n';
 
 interface GameData {
   teams: Team[];
@@ -37,6 +38,7 @@ export function useGameData(): GameData {
         if (saved) {
           setGameState(saved.gameState);
           setSettings(saved.settings);
+          setLanguage(saved.settings.language);
         } else {
           setGameState(createDefaultGameState(teamsData));
         }

@@ -9,13 +9,16 @@ import MatchResultView from './components/match/MatchResult';
 import { useGameData } from './hooks/useGameData';
 import { getTeamById, getTeamPlayers } from './utils/dataLoader';
 import { simulateMatch } from './engine/simulation';
-import { sortLeagueTable } from './utils/storage';
-import type { ViewType, TacticalConfig, MatchResult, LineupSelection } from './types';
+import { sortLeagueTable, saveGame } from './utils/storage';
+import { setLanguage, t } from './locales/i18n';
+import type { Language } from './locales/i18n';
+import type { ViewType, TacticalConfig, MatchResult, GameState, LineupSelection } from './types';
 
 function App() {
-  const { teams, players, loading, error, gameState, setGameState } = useGameData();
+  const { teams, players, loading, error, gameState, settings, setGameState, setSettings } = useGameData();
   const [currentView, setCurrentView] = useState<ViewType>('league');
   const [currentMatchResult, setCurrentMatchResult] = useState<MatchResult | null>(null);
+  const [, forceRender] = useState(0); // for language re-render
 
   const handleNavigate = (view: 'league' | 'team') => {
     setCurrentView(view);
@@ -25,25 +28,32 @@ function App() {
     setCurrentView('team');
   };
 
+  const handleSave = useCallback(() => {
+    saveGame(gameState, settings);
+    alert(t('save.saved'));
+  }, [gameState, settings]);
+
+  const handleLanguageChange = useCallback((lang: Language) => {
+    setLanguage(lang);
+    setSettings({ ...settings, language: lang });
+    forceRender(n => n + 1);
+  }, [settings, setSettings]);
+
   const handlePlay = useCallback((starters: string[], subs: string[], _tactics: TacticalConfig) => {
     const selectedTeam = getTeamById(teams, gameState.selectedTeamId);
     if (!selectedTeam) return;
 
-    // Pick a random opponent for this round
     const opponents = teams.filter(t => t.id !== selectedTeam.id);
     const opponent = opponents[Math.floor(Math.random() * opponents.length)];
 
-    // Build player lineup
     const playerLineup: LineupSelection = { startingXI: starters, subs };
 
-    // Auto-generate opponent lineup (best 11 by rating)
     const oppPlayers = getTeamPlayers(players, opponent.id);
     const oppSorted = [...oppPlayers].sort((a, b) => b.rating - a.rating);
     const oppStarters = oppSorted.slice(0, 11).map(p => p.id);
     const oppSubs = oppSorted.slice(11, 18).map(p => p.id);
     const oppLineup: LineupSelection = { startingXI: oppStarters, subs: oppSubs };
 
-    // Determine home/away (alternate)
     const isHome = gameState.currentRound % 2 === 1;
     const homeTeamId = isHome ? selectedTeam.id : opponent.id;
     const awayTeamId = isHome ? opponent.id : selectedTeam.id;
@@ -62,7 +72,6 @@ function App() {
       homeTeam.capacity,
     );
 
-    // Update league table
     const updatedTable = gameState.leagueTable.map(entry => {
       if (entry.teamId === homeTeamId) {
         const won = result.homeScore > result.awayScore;
@@ -95,16 +104,21 @@ function App() {
       return entry;
     });
 
-    setGameState({
+    const newGameState: GameState = {
       ...gameState,
       leagueTable: sortLeagueTable(updatedTable),
       currentRound: gameState.currentRound + 1,
       matchResults: [...gameState.matchResults, result],
-    });
+    };
+
+    setGameState(newGameState);
+
+    // Auto-save after each match
+    saveGame(newGameState, settings);
 
     setCurrentMatchResult(result);
     setCurrentView('match_result');
-  }, [teams, players, gameState, setGameState]);
+  }, [teams, players, gameState, settings, setGameState]);
 
   const handleBackFromMatch = () => {
     setCurrentMatchResult(null);
@@ -115,7 +129,7 @@ function App() {
     return (
       <AppContainer>
         <div style={{ color: 'white', padding: 20, textAlign: 'center' }}>
-          Carregando...
+          {t('app.loading')}
         </div>
       </AppContainer>
     );
@@ -125,7 +139,7 @@ function App() {
     return (
       <AppContainer>
         <div style={{ color: 'red', padding: 20, textAlign: 'center' }}>
-          Erro: {error}
+          {t('app.error')}: {error}
         </div>
       </AppContainer>
     );
@@ -178,7 +192,12 @@ function App() {
 
   return (
     <AppContainer>
-      <TopMenu onNavigate={handleNavigate} />
+      <TopMenu
+        onNavigate={handleNavigate}
+        onSave={handleSave}
+        onLanguageChange={handleLanguageChange}
+        currentLanguage={settings.language}
+      />
       <div style={{ flex: 1, overflow: 'auto', background: 'var(--bg-green)' }}>
         {renderView()}
       </div>
