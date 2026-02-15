@@ -18,6 +18,10 @@ function App() {
     setCurrentView(view);
   };
 
+  const handleTeamClick = (_teamId: string) => {
+    setCurrentView('team');
+  };
+
   if (loading) {
     return (
       <AppContainer>
@@ -44,13 +48,25 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'league':
-        return <LeagueTable />;
+        return (
+          <LeagueTable
+            leagueTable={gameState.leagueTable}
+            teams={teams}
+            onTeamClick={handleTeamClick}
+          />
+        );
       case 'team':
         return <TeamView />;
       case 'match_result':
         return <MatchResult />;
       default:
-        return <LeagueTable />;
+        return (
+          <LeagueTable
+            leagueTable={gameState.leagueTable}
+            teams={teams}
+            onTeamClick={handleTeamClick}
+          />
+        );
     }
   };
 
