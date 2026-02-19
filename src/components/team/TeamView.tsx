@@ -2,11 +2,12 @@ import { useState, useCallback, useMemo, useRef } from 'react';
 import styles from './TeamView.module.css';
 import TacticsPanel from './TacticsPanel';
 import SquadList from './SquadList';
-import type { Team, Player, TacticalConfig, Position } from '../../types';
+import type { Team, Player, TacticalConfig, Position, LineupSelection } from '../../types';
 
 interface TeamViewProps {
   team: Team;
   players: Player[];
+  initialLineup?: LineupSelection;
   onPlay: (starters: string[], subs: string[], tactics: TacticalConfig) => void;
 }
 
@@ -39,9 +40,13 @@ function validateLineup(players: Player[], starterIds: Set<string>): boolean {
   );
 }
 
-export default function TeamView({ team, players, onPlay }: TeamViewProps) {
-  const [selectedStarters, setSelectedStarters] = useState<Set<string>>(new Set());
-  const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
+export default function TeamView({ team, players, initialLineup, onPlay }: TeamViewProps) {
+  const [selectedStarters, setSelectedStarters] = useState<Set<string>>(
+    () => new Set(initialLineup?.startingXI ?? [])
+  );
+  const [selectedSubs, setSelectedSubs] = useState<Set<string>>(
+    () => new Set(initialLineup?.subs ?? [])
+  );
   const [tactics, setTactics] = useState<TacticalConfig>(DEFAULT_TACTICS);
   const [limitReached, setLimitReached] = useState(false);
   const limitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

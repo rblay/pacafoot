@@ -20,6 +20,8 @@
   padding: var(--spacing-md);
   overflow-y: auto;
   font-size: var(--font-size-xs);
+  display: flex;
+  flex-direction: column;
 }
 
 .lineupHeader {
@@ -144,14 +146,11 @@
   border-top: 1px solid var(--table-border);
 }
 
-.footer {
-  text-align: center;
-}
-
-.backButton {
+.actionButton {
   font-family: var(--font-family);
-  font-size: var(--font-size-md);
-  padding: var(--spacing-sm) var(--spacing-xl);
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  padding: var(--spacing-md) var(--spacing-xl);
   background: var(--btn-bg);
   color: var(--btn-text);
   border: none;
@@ -160,8 +159,17 @@
   border-bottom: 2px solid var(--btn-border-dark);
   border-right: 2px solid var(--btn-border-dark);
   cursor: pointer;
+  margin-top: auto;
+  text-align: center;
 }
 
-.backButton:hover {
+.actionButton:hover {
   background: var(--btn-bg-hover);
+}
+
+.actionButton:active {
+  border-top: 2px solid var(--btn-border-dark);
+  border-left: 2px solid var(--btn-border-dark);
+  border-bottom: 2px solid var(--btn-border-light);
+  border-right: 2px solid var(--btn-border-light);
 }

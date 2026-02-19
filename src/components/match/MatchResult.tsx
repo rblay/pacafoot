@@ -61,6 +61,9 @@ export default function MatchResult({
               ))}
             </>
           )}
+          <button className={styles.actionButton} onClick={onBack}>
+            Voltar ao jogo
+          </button>
         </div>
 
         {/* Events center */}
@@ -130,11 +133,6 @@ export default function MatchResult({
         </div>
       </div>
 
-      <div className={styles.footer}>
-        <button className={styles.backButton} onClick={onBack}>
-          Voltar ao jogo
-        </button>
-      </div>
     </div>
   );
 }

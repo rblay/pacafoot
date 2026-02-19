@@ -164,6 +164,7 @@ function App() {
       leagueTable: sortLeagueTable(updatedTable),
       currentRound: gameState.currentRound + 1,
       matchResults: [...gameState.matchResults, ...roundResults],
+      teamLineups: { ...gameState.teamLineups, [selectedTeamId]: playerLineup },
     };
 
     setGameState(newGameState);
@@ -229,6 +230,7 @@ function App() {
           <TeamView
             team={selectedTeam}
             players={teamPlayers}
+            initialLineup={gs.teamLineups[gs.selectedTeamId]}
             onPlay={handlePlay}
           />
         );

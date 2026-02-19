@@ -81,7 +81,7 @@ export default function LeagueTable({ leagueTable, teams, onTeamClick, onPrepare
         </table>
       </div>
       <div className={styles.footer}>
-        <button className="retro-btn" onClick={onPrepareMatch}>
+        <button className={styles.actionButton} onClick={onPrepareMatch}>
           Preparar próximo jogo »
         </button>
       </div>
