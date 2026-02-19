@@ -1,6 +1,6 @@
 import type { Team, Player } from '../types';
 
-const DATA_BASE_PATH = '/data/leagues/serie_a';
+const DATA_BASE_PATH = `${import.meta.env.BASE_URL}data/leagues/serie_a`;
 
 export async function loadTeams(): Promise<Team[]> {
   const response = await fetch(`${DATA_BASE_PATH}/teams.json`);
