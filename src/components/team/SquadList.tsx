@@ -6,6 +6,7 @@ interface SquadListProps {
   selectedStarters: Set<string>;
   selectedSubs: Set<string>;
   onTogglePlayer: (playerId: string) => void;
+  limitReached?: boolean;
 }
 
 const VIEW_TABS = ['Jogar', 'Histórico', 'Técnico', 'Jogador'];
@@ -27,11 +28,20 @@ function formatSalary(salary: number): string {
   return String(salary);
 }
 
+function JerseyIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20">
+      <path d="M7 1 L1 5 L4 8 L4 18 L16 18 L16 8 L19 5 L13 1 Q10 3 7 1Z" />
+    </svg>
+  );
+}
+
 export default function SquadList({
   players,
   selectedStarters,
   selectedSubs,
   onTogglePlayer,
+  limitReached,
 }: SquadListProps) {
   const sortedPlayers = [...players].sort(
     (a, b) => POS_ORDER[a.position] - POS_ORDER[b.position] || b.rating - a.rating
@@ -50,10 +60,17 @@ export default function SquadList({
         ))}
       </div>
 
+      {limitReached && (
+        <div className={styles.limitBanner}>
+          Limite atingido — remova um titular ou reserva para adicionar outro
+        </div>
+      )}
+
       <div className={styles.tableScroll}>
         <table className={styles.table}>
           <thead>
             <tr>
+              <th className={styles.jerseyCol}>XI</th>
               <th>P</th>
               <th className={styles.nameCol}>Nome</th>
               <th>Função</th>
@@ -73,6 +90,12 @@ export default function SquadList({
               const isSub = selectedSubs.has(player.id);
               const isSelected = isStarter || isSub;
 
+              const jerseyClass = isStarter
+                ? styles.jerseyStarter
+                : isSub
+                  ? styles.jerseySub
+                  : styles.jerseyNone;
+
               return (
                 <tr
                   key={player.id}
@@ -83,8 +106,16 @@ export default function SquadList({
                         ? styles.rowEven
                         : styles.rowOdd
                   }
-                  onClick={() => onTogglePlayer(player.id)}
                 >
+                  <td className={styles.jerseyCol}>
+                    <button
+                      className={`${styles.jerseyBtn} ${jerseyClass}`}
+                      onClick={() => onTogglePlayer(player.id)}
+                      title={isStarter ? 'Titular' : isSub ? 'Reserva' : 'Não selecionado'}
+                    >
+                      <JerseyIcon />
+                    </button>
+                  </td>
                   <td className={POS_CLASS[player.position]}>{player.position}</td>
                   <td className={styles.nameCol}>{player.name}</td>
                   <td>{player.role}</td>

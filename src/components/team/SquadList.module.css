@@ -115,3 +115,32 @@
 .posZ { color: #006600; font-weight: bold; }
 .posM { color: #cc6600; font-weight: bold; }
 .posA { color: #cc0000; font-weight: bold; }
+
+.jerseyCol {
+  width: 28px;
+  text-align: center;
+}
+
+.jerseyBtn {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.jerseyNone svg { fill: #ccc; stroke: #999; stroke-width: 0.5px; }
+.jerseyStarter svg { fill: #22aa44; stroke: #116622; stroke-width: 0.5px; }
+.jerseySub svg { fill: #ddcc00; stroke: #aa9900; stroke-width: 0.5px; }
+
+.limitBanner {
+  background: #aa0000;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+  text-align: center;
+  border-bottom: 2px solid #770000;
+}

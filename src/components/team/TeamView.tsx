@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import styles from './TeamView.module.css';
 import TacticsPanel from './TacticsPanel';
 import SquadList from './SquadList';
@@ -43,41 +43,45 @@ export default function TeamView({ team, players, onPlay }: TeamViewProps) {
   const [selectedStarters, setSelectedStarters] = useState<Set<string>>(new Set());
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
   const [tactics, setTactics] = useState<TacticalConfig>(DEFAULT_TACTICS);
+  const [limitReached, setLimitReached] = useState(false);
+  const limitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTogglePlayer = useCallback((playerId: string) => {
-    setSelectedStarters(prev => {
-      const next = new Set(prev);
-      if (next.has(playerId)) {
-        // Deselect from starters
-        next.delete(playerId);
-        return next;
+    const isStarter = selectedStarters.has(playerId);
+    const isSub = selectedSubs.has(playerId);
+
+    if (isStarter) {
+      // Green → remove from starters, add to subs if room, else skip to white
+      const nextStarters = new Set(selectedStarters);
+      nextStarters.delete(playerId);
+      setSelectedStarters(nextStarters);
+      if (selectedSubs.size < MAX_SUBS) {
+        const nextSubs = new Set(selectedSubs);
+        nextSubs.add(playerId);
+        setSelectedSubs(nextSubs);
       }
-      // Check if in subs
-      setSelectedSubs(prevSubs => {
-        if (prevSubs.has(playerId)) {
-          const nextSubs = new Set(prevSubs);
-          nextSubs.delete(playerId);
-          return nextSubs;
-        }
-        return prevSubs;
-      });
-      // Add to starters if under limit
-      if (next.size < MAX_STARTERS) {
-        next.add(playerId);
-        return next;
+    } else if (isSub) {
+      // Yellow → white (remove from subs)
+      const nextSubs = new Set(selectedSubs);
+      nextSubs.delete(playerId);
+      setSelectedSubs(nextSubs);
+    } else {
+      // White → try starter, then sub, else show banner
+      if (selectedStarters.size < MAX_STARTERS) {
+        const nextStarters = new Set(selectedStarters);
+        nextStarters.add(playerId);
+        setSelectedStarters(nextStarters);
+      } else if (selectedSubs.size < MAX_SUBS) {
+        const nextSubs = new Set(selectedSubs);
+        nextSubs.add(playerId);
+        setSelectedSubs(nextSubs);
+      } else {
+        setLimitReached(true);
+        if (limitTimerRef.current) clearTimeout(limitTimerRef.current);
+        limitTimerRef.current = setTimeout(() => setLimitReached(false), 3000);
       }
-      // Starters full, add to subs
-      setSelectedSubs(prevSubs => {
-        if (prevSubs.size < MAX_SUBS) {
-          const nextSubs = new Set(prevSubs);
-          nextSubs.add(playerId);
-          return nextSubs;
-        }
-        return prevSubs;
-      });
-      return prev;
-    });
-  }, []);
+    }
+  }, [selectedStarters, selectedSubs]);
 
   const canPlay = useMemo(
     () => validateLineup(players, selectedStarters),
@@ -109,6 +113,7 @@ export default function TeamView({ team, players, onPlay }: TeamViewProps) {
         selectedStarters={selectedStarters}
         selectedSubs={selectedSubs}
         onTogglePlayer={handleTogglePlayer}
+        limitReached={limitReached}
       />
     </div>
   );
