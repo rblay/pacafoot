@@ -1,24 +1,93 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import './styles/theme.css';
 import AppContainer from './components/layout/AppContainer';
 import TopMenu from './components/layout/TopMenu';
 import StatusBar from './components/layout/StatusBar';
+import StartScreen from './components/start/StartScreen';
 import LeagueTable from './components/league/LeagueTable';
 import TeamView from './components/team/TeamView';
 import MatchResultView from './components/match/MatchResult';
 import { useGameData } from './hooks/useGameData';
 import { getTeamById, getTeamPlayers } from './utils/dataLoader';
 import { simulateMatch } from './engine/simulation';
-import { sortLeagueTable, saveGame } from './utils/storage';
+import { generateSchedule } from './engine/fixtures';
+import { sortLeagueTable, saveGame, deleteSave, createDefaultGameState, hasSave } from './utils/storage';
 import { setLanguage, t } from './locales/i18n';
 import type { Language } from './locales/i18n';
-import type { ViewType, TacticalConfig, MatchResult, GameState, LineupSelection } from './types';
+import type { ViewType, TacticalConfig, MatchResult, GameState, LineupSelection, LeagueTableEntry, Player } from './types';
+
+/** Auto-select the best available lineup for an AI-controlled team. */
+function autoLineup(teamPlayers: Player[]): LineupSelection {
+  const sorted = [...teamPlayers].sort((a, b) => b.rating - a.rating);
+  return {
+    startingXI: sorted.slice(0, 11).map(p => p.id),
+    subs: sorted.slice(11, 18).map(p => p.id),
+  };
+}
+
+/** Apply a single match result to the league table. */
+function applyResult(table: LeagueTableEntry[], result: MatchResult): LeagueTableEntry[] {
+  return table.map(entry => {
+    if (entry.teamId === result.homeTeamId) {
+      const won = result.homeScore > result.awayScore;
+      const drawn = result.homeScore === result.awayScore;
+      return {
+        ...entry,
+        played: entry.played + 1,
+        won: entry.won + (won ? 1 : 0),
+        drawn: entry.drawn + (drawn ? 1 : 0),
+        lost: entry.lost + (!won && !drawn ? 1 : 0),
+        goalsFor: entry.goalsFor + result.homeScore,
+        goalsAgainst: entry.goalsAgainst + result.awayScore,
+        points: entry.points + (won ? 3 : drawn ? 1 : 0),
+      };
+    }
+    if (entry.teamId === result.awayTeamId) {
+      const won = result.awayScore > result.homeScore;
+      const drawn = result.homeScore === result.awayScore;
+      return {
+        ...entry,
+        played: entry.played + 1,
+        won: entry.won + (won ? 1 : 0),
+        drawn: entry.drawn + (drawn ? 1 : 0),
+        lost: entry.lost + (!won && !drawn ? 1 : 0),
+        goalsFor: entry.goalsFor + result.awayScore,
+        goalsAgainst: entry.goalsAgainst + result.homeScore,
+        points: entry.points + (won ? 3 : drawn ? 1 : 0),
+      };
+    }
+    return entry;
+  });
+}
 
 function App() {
   const { teams, players, loading, error, gameState, settings, setGameState, setSettings } = useGameData();
-  const [currentView, setCurrentView] = useState<ViewType>('league');
+  const [currentView, setCurrentView] = useState<ViewType>(() => hasSave() ? 'team' : 'start');
   const [currentMatchResult, setCurrentMatchResult] = useState<MatchResult | null>(null);
   const [, forceRender] = useState(0); // for language re-render
+
+  // Generate the full 38-round season schedule once from stable sorted team IDs.
+  const schedule = useMemo(
+    () => teams.length > 0
+      ? generateSchedule([...teams].sort((a, b) => a.id.localeCompare(b.id)).map(t => t.id))
+      : [],
+    [teams]
+  );
+
+  const handleTeamSelect = useCallback((teamId: string) => {
+    const newState = createDefaultGameState(teams, teamId);
+    setGameState(newState);
+    saveGame(newState, settings);
+    setCurrentView('team');
+  }, [teams, settings, setGameState]);
+
+  const handleNewGame = useCallback(() => {
+    if (!confirm(t('menu.newGameConfirm'))) return;
+    deleteSave();
+    setGameState(null);
+    setCurrentMatchResult(null);
+    setCurrentView('start');
+  }, [setGameState]);
 
   const handleNavigate = (view: 'league' | 'team') => {
     setCurrentView(view);
@@ -29,6 +98,7 @@ function App() {
   };
 
   const handleSave = useCallback(() => {
+    if (!gameState) return;
     saveGame(gameState, settings);
     alert(t('save.saved'));
   }, [gameState, settings]);
@@ -40,85 +110,67 @@ function App() {
   }, [settings, setSettings]);
 
   const handlePlay = useCallback((starters: string[], subs: string[], _tactics: TacticalConfig) => {
-    const selectedTeam = getTeamById(teams, gameState.selectedTeamId);
-    if (!selectedTeam) return;
+    if (!gameState) return;
+    const selectedTeamId = gameState.selectedTeamId;
+    const roundIndex = gameState.currentRound - 1;
 
-    const opponents = teams.filter(t => t.id !== selectedTeam.id);
-    const opponent = opponents[Math.floor(Math.random() * opponents.length)];
+    if (roundIndex >= schedule.length) return;
+
+    const roundFixtures = schedule[roundIndex];
+    const playerFixture = roundFixtures.find(
+      ([h, a]) => h === selectedTeamId || a === selectedTeamId
+    );
+    if (!playerFixture) return;
 
     const playerLineup: LineupSelection = { startingXI: starters, subs };
+    const roundResults: MatchResult[] = [];
+    let playerResult: MatchResult | null = null;
 
-    const oppPlayers = getTeamPlayers(players, opponent.id);
-    const oppSorted = [...oppPlayers].sort((a, b) => b.rating - a.rating);
-    const oppStarters = oppSorted.slice(0, 11).map(p => p.id);
-    const oppSubs = oppSorted.slice(11, 18).map(p => p.id);
-    const oppLineup: LineupSelection = { startingXI: oppStarters, subs: oppSubs };
+    for (const [hId, aId] of roundFixtures) {
+      const hTeam = getTeamById(teams, hId);
+      const aTeam = getTeamById(teams, aId);
+      if (!hTeam || !aTeam) continue;
 
-    const isHome = gameState.currentRound % 2 === 1;
-    const homeTeamId = isHome ? selectedTeam.id : opponent.id;
-    const awayTeamId = isHome ? opponent.id : selectedTeam.id;
-    const homePlayers = getTeamPlayers(players, homeTeamId);
-    const awayPlayers = getTeamPlayers(players, awayTeamId);
-    const homeLineup = isHome ? playerLineup : oppLineup;
-    const awayLineup = isHome ? oppLineup : playerLineup;
-    const homeTeam = isHome ? selectedTeam : opponent;
+      const hPlayers = getTeamPlayers(players, hId);
+      const aPlayers = getTeamPlayers(players, aId);
 
-    const result = simulateMatch(
-      homeTeamId, awayTeamId,
-      homePlayers, awayPlayers,
-      homeLineup, awayLineup,
-      gameState.currentRound,
-      homeTeam.stadium,
-      homeTeam.capacity,
-    );
+      const hLineup = hId === selectedTeamId ? playerLineup : autoLineup(hPlayers);
+      const aLineup = aId === selectedTeamId ? playerLineup : autoLineup(aPlayers);
 
-    const updatedTable = gameState.leagueTable.map(entry => {
-      if (entry.teamId === homeTeamId) {
-        const won = result.homeScore > result.awayScore;
-        const drawn = result.homeScore === result.awayScore;
-        return {
-          ...entry,
-          played: entry.played + 1,
-          won: entry.won + (won ? 1 : 0),
-          drawn: entry.drawn + (drawn ? 1 : 0),
-          lost: entry.lost + (!won && !drawn ? 1 : 0),
-          goalsFor: entry.goalsFor + result.homeScore,
-          goalsAgainst: entry.goalsAgainst + result.awayScore,
-          points: entry.points + (won ? 3 : drawn ? 1 : 0),
-        };
+      const result = simulateMatch(
+        hId, aId,
+        hPlayers, aPlayers,
+        hLineup, aLineup,
+        gameState.currentRound,
+        hTeam.stadium,
+        hTeam.capacity,
+      );
+
+      roundResults.push(result);
+      if (hId === selectedTeamId || aId === selectedTeamId) {
+        playerResult = result;
       }
-      if (entry.teamId === awayTeamId) {
-        const won = result.awayScore > result.homeScore;
-        const drawn = result.homeScore === result.awayScore;
-        return {
-          ...entry,
-          played: entry.played + 1,
-          won: entry.won + (won ? 1 : 0),
-          drawn: entry.drawn + (drawn ? 1 : 0),
-          lost: entry.lost + (!won && !drawn ? 1 : 0),
-          goalsFor: entry.goalsFor + result.awayScore,
-          goalsAgainst: entry.goalsAgainst + result.homeScore,
-          points: entry.points + (won ? 3 : drawn ? 1 : 0),
-        };
-      }
-      return entry;
-    });
+    }
+
+    if (!playerResult) return;
+
+    let updatedTable = gameState.leagueTable;
+    for (const result of roundResults) {
+      updatedTable = applyResult(updatedTable, result);
+    }
 
     const newGameState: GameState = {
       ...gameState,
       leagueTable: sortLeagueTable(updatedTable),
       currentRound: gameState.currentRound + 1,
-      matchResults: [...gameState.matchResults, result],
+      matchResults: [...gameState.matchResults, ...roundResults],
     };
 
     setGameState(newGameState);
-
-    // Auto-save after each match
     saveGame(newGameState, settings);
-
-    setCurrentMatchResult(result);
+    setCurrentMatchResult(playerResult);
     setCurrentView('match_result');
-  }, [teams, players, gameState, settings, setGameState]);
+  }, [teams, players, gameState, settings, setGameState, schedule]);
 
   const handleBackFromMatch = () => {
     setCurrentMatchResult(null);
@@ -145,7 +197,18 @@ function App() {
     );
   }
 
-  const selectedTeam = getTeamById(teams, gameState.selectedTeamId);
+  // Start screen: full-window, no top menu / status bar
+  if (currentView === 'start') {
+    return (
+      <AppContainer>
+        <StartScreen teams={teams} onConfirm={handleTeamSelect} />
+      </AppContainer>
+    );
+  }
+
+  // From here gameState is guaranteed to be non-null (save exists or was just created)
+  const gs = gameState!;
+  const selectedTeam = getTeamById(teams, gs.selectedTeamId);
   const teamName = selectedTeam?.name ?? '—';
 
   const renderView = () => {
@@ -153,9 +216,10 @@ function App() {
       case 'league':
         return (
           <LeagueTable
-            leagueTable={gameState.leagueTable}
+            leagueTable={gs.leagueTable}
             teams={teams}
             onTeamClick={handleTeamClick}
+            onPrepareMatch={() => setCurrentView('team')}
           />
         );
       case 'team': {
@@ -195,13 +259,14 @@ function App() {
       <TopMenu
         onNavigate={handleNavigate}
         onSave={handleSave}
+        onNewGame={handleNewGame}
         onLanguageChange={handleLanguageChange}
         currentLanguage={settings.language}
       />
       <div style={{ flex: 1, overflow: 'auto', background: 'var(--bg-green)' }}>
         {renderView()}
       </div>
-      <StatusBar teamName={teamName} round={gameState.currentRound} />
+      <StatusBar teamName={teamName} round={gs.currentRound} />
     </AppContainer>
   );
 }

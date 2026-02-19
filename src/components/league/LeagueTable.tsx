@@ -5,6 +5,7 @@ interface LeagueTableProps {
   leagueTable: LeagueTableEntry[];
   teams: Team[];
   onTeamClick: (teamId: string) => void;
+  onPrepareMatch: () => void;
 }
 
 const TABS = ['Nacional', 'Estadual', 'Libertadores', 'Sul-Americana'];
@@ -15,7 +16,7 @@ function getRowClass(position: number): string {
   return position % 2 === 0 ? styles.rowEven : styles.rowOdd;
 }
 
-export default function LeagueTable({ leagueTable, teams, onTeamClick }: LeagueTableProps) {
+export default function LeagueTable({ leagueTable, teams, onTeamClick, onPrepareMatch }: LeagueTableProps) {
   const teamMap = new Map(teams.map(t => [t.id, t]));
 
   return (
@@ -78,6 +79,11 @@ export default function LeagueTable({ leagueTable, teams, onTeamClick }: LeagueT
             })}
           </tbody>
         </table>
+      </div>
+      <div className={styles.footer}>
+        <button className="retro-btn" onClick={onPrepareMatch}>
+          Preparar próximo jogo »
+        </button>
       </div>
     </div>
   );

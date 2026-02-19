@@ -64,13 +64,13 @@ export function sortLeagueTable(table: LeagueTableEntry[]): LeagueTableEntry[] {
   }));
 }
 
-/** Create default game state */
-export function createDefaultGameState(teams: Team[]): GameState {
+/** Create default game state for the given selected team */
+export function createDefaultGameState(teams: Team[], selectedTeamId: string): GameState {
   return {
     leagueTable: createInitialLeagueTable(teams),
     currentRound: 1,
     matchResults: [],
-    selectedTeamId: teams[0]?.id ?? '',
+    selectedTeamId,
     teamLineups: {},
     teamTactics: {},
     playerStats: {},

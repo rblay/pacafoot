@@ -5,11 +5,12 @@ import type { Language } from '../../locales/i18n';
 interface TopMenuProps {
   onNavigate: (view: 'league' | 'team') => void;
   onSave: () => void;
+  onNewGame: () => void;
   onLanguageChange: (lang: Language) => void;
   currentLanguage: Language;
 }
 
-export default function TopMenu({ onNavigate, onSave, onLanguageChange, currentLanguage }: TopMenuProps) {
+export default function TopMenu({ onNavigate, onSave, onNewGame, onLanguageChange, currentLanguage }: TopMenuProps) {
   return (
     <div className={styles.menuBar}>
       <button className={styles.menuItem} onClick={() => onNavigate('league')}>
@@ -20,6 +21,9 @@ export default function TopMenu({ onNavigate, onSave, onLanguageChange, currentL
       </button>
       <button className={styles.menuItem} onClick={onSave}>
         {t('menu.save')}
+      </button>
+      <button className={styles.menuItem} onClick={onNewGame}>
+        {t('menu.newGame')}
       </button>
       <div style={{ marginLeft: 'auto' }}>
         <button
