@@ -55,7 +55,7 @@ public/
 
 ## Workflow Checklist
 Before committing, always:
-1. **Create a branch** — never commit directly to `main`; use `feat/`, `fix/`, or `chore/` prefix
+1. **Create a branch** — never commit directly to `main`; use `feat/`, `fix/`, or `chore/` prefix; push the branch to remote and merge via PR on GitHub
 2. **Review `CLAUDE.md`** — ensure conventions are current; remove anything outdated
 3. **Review `BACKLOG.md`** — mark items done, add newly discovered work, adjust as needed
 4. **Review `README.md`** — update if project structure, setup steps, or features have changed
