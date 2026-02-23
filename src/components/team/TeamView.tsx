@@ -1,13 +1,15 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import styles from './TeamView.module.css';
 import TacticsPanel from './TacticsPanel';
 import SquadList from './SquadList';
+import { autoLineup, detectFormation } from '../../engine/lineup';
 import type { Team, Player, TacticalConfig, Position, LineupSelection } from '../../types';
 
 interface TeamViewProps {
   team: Team;
   players: Player[];
   initialLineup?: LineupSelection;
+  initialTactics?: TacticalConfig;
   onPlay: (starters: string[], subs: string[], tactics: TacticalConfig) => void;
 }
 
@@ -15,7 +17,7 @@ const MAX_STARTERS = 11;
 const MAX_SUBS = 12;
 
 const DEFAULT_TACTICS: TacticalConfig = {
-  formation: '4-4-2',
+  formation: 'custom',
   playStyle: 'Equilibrado',
   attackFocus: 'Ambos',
   pressing: 'Média',
@@ -40,15 +42,39 @@ function validateLineup(players: Player[], starterIds: Set<string>): boolean {
   );
 }
 
-export default function TeamView({ team, players, initialLineup, onPlay }: TeamViewProps) {
+export default function TeamView({ team, players, initialLineup, initialTactics, onPlay }: TeamViewProps) {
   const [selectedStarters, setSelectedStarters] = useState<Set<string>>(
     () => new Set(initialLineup?.startingXI ?? [])
   );
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(
     () => new Set(initialLineup?.subs ?? [])
   );
-  const [tactics, setTactics] = useState<TacticalConfig>(DEFAULT_TACTICS);
+  const [tactics, setTactics] = useState<TacticalConfig>(() => {
+    if (initialTactics) return initialTactics;
+    if (initialLineup) {
+      const starters = players.filter(p => initialLineup.startingXI.includes(p.id));
+      return { ...DEFAULT_TACTICS, formation: detectFormation(starters) };
+    }
+    return DEFAULT_TACTICS;
+  });
   const [limitReached, setLimitReached] = useState(false);
+
+  // Detect formation whenever starters reach a full XI
+  useEffect(() => {
+    if (selectedStarters.size !== 11) return;
+    const starters = players.filter(p => selectedStarters.has(p.id));
+    const detected = detectFormation(starters);
+    setTactics(t => ({ ...t, formation: detected }));
+  }, [selectedStarters, players]);
+
+  const handleTacticsChange = useCallback((newTactics: TacticalConfig) => {
+    if (newTactics.formation !== 'custom' && newTactics.formation !== tactics.formation) {
+      const lineup = autoLineup(players, newTactics.formation);
+      setSelectedStarters(new Set(lineup.startingXI));
+      setSelectedSubs(new Set(lineup.subs));
+    }
+    setTactics(newTactics);
+  }, [tactics.formation, players]);
   const limitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTogglePlayer = useCallback((playerId: string) => {
@@ -107,7 +133,7 @@ export default function TeamView({ team, players, initialLineup, onPlay }: TeamV
       <TacticsPanel
         team={team}
         tactics={tactics}
-        onTacticsChange={setTactics}
+        onTacticsChange={handleTacticsChange}
         startersCount={selectedStarters.size}
         subsCount={selectedSubs.size}
         canPlay={canPlay}
