@@ -4,14 +4,15 @@ Strategy: nail simulation dynamics → transfers → expand DB.
 
 | Priority | Item | Theme | Status |
 |----------|------|-------|--------|
-| 1 | **Minute-by-minute simulation display** — animated event feed with timer/pause controls; events array already generated internally, just needs UI | Match Engine | 📋 |
-| 2 | **View other squad details** — clicking a team name in the league table opens a read-only squad/tactics view for that club | Tactics & Lineup | 📋 |
-| 3 | **Follow other match results live** — while playing your match, show a live scores panel for other fixtures in the round | Match Engine | 📋 |
-| 4 | **Season end screen** — detect end of round 38; show final standings, champion banner, promoted/relegated teams | Season & Competition | 📋 |
-| 5 | **Cards and suspensions** — yellow/red card events during simulation; accumulated yellows and reds trigger match bans | Match Engine | 📋 |
-| 6 | **Injuries and recovery** — players can get injured during matches; recovery takes N rounds; injured players unavailable for selection | Squad Management | 📋 |
-| 7 | **Transfer market** — buy/sell players between rounds; budget system; AI clubs also make transfers | Squad Management | 📋 |
-| 8 | **Real player database** — replace AI-estimated bench players with verified squad data; schema is stable, JSON-only change (football-data.org / API-Football free tier) | Data & Content | 📋 |
+| 1 | **Minute-by-minute simulation display** — animated event feed with timer/pause controls; events array already generated internally, just needs UI | Match Engine | ✅ |
+| 2 | **Substitutions during match** — manager makes up to 3 subs during the minute-by-minute feed; chosen sub pauses the clock, player swapped in affects simulation strength from that minute onward | Match Engine | 📋 |
+| 3 | **View other squad details** — clicking a team name in the league table opens a read-only squad/tactics view for that club | Tactics & Lineup | 📋 |
+| 4 | **Follow other match results live** — while playing your match, show a live scores panel for other fixtures in the round | Match Engine | 📋 |
+| 5 | **Season end screen** — detect end of round 38; show final standings, champion banner, promoted/relegated teams | Season & Competition | 📋 |
+| 6 | **Cards and suspensions** — yellow/red card events during simulation; accumulated yellows and reds trigger match bans | Match Engine | 📋 |
+| 7 | **Injuries and recovery** — players can get injured during matches; recovery takes N rounds; injured players unavailable for selection | Squad Management | 📋 |
+| 8 | **Transfer market** — buy/sell players between rounds; budget system; AI clubs also make transfers | Squad Management | 📋 |
+| 9 | **Real player database** — replace AI-estimated bench players with verified squad data; schema is stable, JSON-only change (football-data.org / API-Football free tier) | Data & Content | 📋 |
 | — | **Improve simulation logic** — incorporate formation, play style (defensive/attacking), and pressing intensity into goal probability | Match Engine | 📋 |
 | — | **Review team strength calculation** — audit current position-weight model; consider form, home advantage, fatigue | Match Engine | 📋 |
 | — | **Multi-season** — after season ends, roll over to next season; update squads, reset standings, keep save continuity | Season & Competition | 📋 |
