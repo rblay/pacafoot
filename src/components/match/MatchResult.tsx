@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import styles from './MatchResult.module.css';
 import type { MatchResult as MatchResultType, Team, Player } from '../../types';
 
@@ -10,6 +11,8 @@ interface MatchResultProps {
   onBack: () => void;
 }
 
+const TICK_MS = 100; // 1 game minute per tick → 90s total
+
 export default function MatchResult({
   result,
   homeTeam,
@@ -18,6 +21,28 @@ export default function MatchResult({
   awayPlayers,
   onBack,
 }: MatchResultProps) {
+  const [displayedMinute, setDisplayedMinute] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const eventsEndRef = useRef<HTMLDivElement>(null);
+
+  const isFinished = displayedMinute >= 90;
+
+  useEffect(() => {
+    if (isPaused || isFinished) return;
+    const interval = setInterval(() => {
+      setDisplayedMinute(m => (m >= 90 ? 90 : m + 1));
+    }, TICK_MS);
+    return () => clearInterval(interval);
+  }, [isPaused, isFinished]);
+
+  useEffect(() => {
+    eventsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [displayedMinute]);
+
+  const visibleEvents = result.events.filter(e => e.minute <= displayedMinute);
+  const liveHomeScore = visibleEvents.filter(e => e.type === 'goal' && e.team === 'home').length;
+  const liveAwayScore = visibleEvents.filter(e => e.type === 'goal' && e.team === 'away').length;
+
   const homePlayerMap = new Map(homePlayers.map(p => [p.id, p]));
   const awayPlayerMap = new Map(awayPlayers.map(p => [p.id, p]));
 
@@ -74,15 +99,36 @@ export default function MatchResult({
             </div>
             <div className={styles.scoreTeams}>
               <span>{homeTeam.shortName}</span>
-              <span className={styles.scoreNumber}>{result.homeScore}</span>
+              <span className={styles.scoreNumber}>{liveHomeScore}</span>
               <span className={styles.scoreX}>X</span>
-              <span className={styles.scoreNumber}>{result.awayScore}</span>
+              <span className={styles.scoreNumber}>{liveAwayScore}</span>
               <span>{awayTeam.shortName}</span>
+            </div>
+            <div className={styles.matchClock}>
+              {isFinished ? 'FT' : `${displayedMinute}'`}
             </div>
           </div>
 
+          <div className={styles.progressBar}>
+            <div
+              className={styles.progressFill}
+              style={{ width: `${(displayedMinute / 90) * 100}%` }}
+            />
+          </div>
+
+          {!isFinished && (
+            <div className={styles.controls}>
+              <button className={styles.controlBtn} onClick={() => setIsPaused(p => !p)}>
+                {isPaused ? '▶ Continuar' : '⏸ Pausa'}
+              </button>
+              <button className={styles.controlBtn} onClick={() => setDisplayedMinute(90)}>
+                ⏭ Pular
+              </button>
+            </div>
+          )}
+
           <div className={styles.eventsList}>
-            {result.events.map((event, i) => (
+            {visibleEvents.map((event, i) => (
               <div
                 key={i}
                 className={`${styles.event} ${event.type === 'goal' ? styles.eventGoal : ''}`}
@@ -99,6 +145,7 @@ export default function MatchResult({
                 </span>
               </div>
             ))}
+            <div ref={eventsEndRef} />
           </div>
 
           <div className={styles.attendance}>
@@ -132,7 +179,6 @@ export default function MatchResult({
           )}
         </div>
       </div>
-
     </div>
   );
 }

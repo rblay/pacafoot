@@ -137,6 +137,56 @@
   border-radius: 1px;
 }
 
+.matchClock {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+  letter-spacing: 1px;
+}
+
+.progressBar {
+  height: 4px;
+  background: var(--table-border);
+  margin-bottom: var(--spacing-sm);
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--btn-bg);
+  transition: width 80ms linear;
+}
+
+.controls {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.controlBtn {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  padding: 2px var(--spacing-sm);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-top: 2px solid var(--btn-border-light);
+  border-left: 2px solid var(--btn-border-light);
+  border-bottom: 2px solid var(--btn-border-dark);
+  border-right: 2px solid var(--btn-border-dark);
+  cursor: pointer;
+}
+
+.controlBtn:hover {
+  background: var(--btn-bg-hover);
+}
+
+.controlBtn:active {
+  border-top: 2px solid var(--btn-border-dark);
+  border-left: 2px solid var(--btn-border-dark);
+  border-bottom: 2px solid var(--btn-border-light);
+  border-right: 2px solid var(--btn-border-light);
+}
+
 .attendance {
   text-align: center;
   font-size: var(--font-size-xs);
