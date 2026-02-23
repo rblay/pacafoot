@@ -109,7 +109,7 @@ function App() {
     forceRender(n => n + 1);
   }, [settings, setSettings]);
 
-  const handlePlay = useCallback((starters: string[], subs: string[], _tactics: TacticalConfig) => {
+  const handlePlay = useCallback((starters: string[], subs: string[], tactics: TacticalConfig) => {
     if (!gameState) return;
     const selectedTeamId = gameState.selectedTeamId;
     const roundIndex = gameState.currentRound - 1;
@@ -165,6 +165,7 @@ function App() {
       currentRound: gameState.currentRound + 1,
       matchResults: [...gameState.matchResults, ...roundResults],
       teamLineups: { ...gameState.teamLineups, [selectedTeamId]: playerLineup },
+      teamTactics: { ...gameState.teamTactics, [selectedTeamId]: tactics },
     };
 
     setGameState(newGameState);
@@ -231,6 +232,7 @@ function App() {
             team={selectedTeam}
             players={teamPlayers}
             initialLineup={gs.teamLineups[gs.selectedTeamId]}
+            initialTactics={gs.teamTactics[gs.selectedTeamId]}
             onPlay={handlePlay}
           />
         );

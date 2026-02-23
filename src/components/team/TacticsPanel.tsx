@@ -12,7 +12,7 @@ interface TacticsPanelProps {
   onPlay: () => void;
 }
 
-const FORMATIONS: Formation[] = ['4-4-2', '4-3-3', '3-5-2', '4-5-1', '4-2-3-1', '3-4-3'];
+const FORMATIONS: Formation[] = ['4-4-2', '4-3-3', '3-5-2', '4-5-1', '3-4-3', '5-4-1', '5-3-2'];
 const PLAY_STYLES: PlayStyle[] = ['Defensivo', 'Equilibrado', 'Ofensivo'];
 const ATTACK_FOCUSES: AttackFocus[] = ['Alas', 'Centro', 'Ambos'];
 const PRESSING_OPTIONS: Pressing[] = ['Baixa', 'Média', 'Alta'];
@@ -68,8 +68,16 @@ export default function TacticsPanel({
         <select
           className={styles.tacticalSelect}
           value={tactics.formation}
-          onChange={e => updateTactic('formation', e.target.value as Formation)}
+          onChange={e => {
+            const val = e.target.value as Formation;
+            if (val !== 'custom') updateTactic('formation', val);
+          }}
         >
+          {tactics.formation === 'custom' && (
+            <option value="custom">
+              {startersCount === 0 ? '— Escolher —' : 'Tática customizada'}
+            </option>
+          )}
           {FORMATIONS.map(f => <option key={f} value={f}>{f}</option>)}
         </select>
       </div>
