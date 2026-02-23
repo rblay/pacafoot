@@ -86,9 +86,11 @@ export default function MatchResult({
               ))}
             </>
           )}
-          <button className={styles.actionButton} onClick={onBack}>
-            Voltar ao jogo
-          </button>
+          {isFinished && (
+            <button className={styles.actionButton} onClick={onBack}>
+              Avançar
+            </button>
+          )}
         </div>
 
         {/* Events center */}
