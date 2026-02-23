@@ -47,11 +47,12 @@ public/
 - Save format: JSON in LocalStorage under key "pacafoot_save"
 
 ## Testing
-- `npm test` — run all tests once (Vitest); required before committing engine/util changes
+- `npm test` — run all tests once (Vitest); **always run locally before pushing**
 - `npm run test:watch` — watch mode for TDD
 - `npm run dev` — start dev server
 - `npm run build` — production build; must pass with no errors
 - Tests are co-located with source as `*.test.ts`; cover engine and utils only (no component tests)
+- CI also runs `npm test` before build on every push to `main` — failing tests block deployment
 
 ## Workflow Checklist
 Before committing, always:
