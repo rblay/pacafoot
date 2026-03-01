@@ -6,7 +6,7 @@ Top rows are highest priority — order is the priority.
 | Item | Theme | Status |
 |------|-------|--------|
 | **Auto-lineup from formation** — when a formation is selected, pre-fill the starting XI and bench with the best available players for that shape (e.g. 4-4-2 picks top 2 A, top 4 M, top 4 Z/L, top 1 G); user can still swap manually after | Tactics & Lineup | 📋 |
-| **Substitutions during match** — manager makes up to 3 subs during the minute-by-minute feed; chosen sub pauses the clock, player swapped in affects simulation strength from that minute onward | Match Engine | 📋 |
+| **Substitutions during match** — manager makes up to 3 subs during the minute-by-minute feed; chosen sub pauses the clock, player swapped in affects simulation strength from that minute onward | Match Engine | ✅ |
 | **View other squad details** — clicking a team name in the league table opens a read-only squad/tactics view for that club | Tactics & Lineup | 📋 |
 | **Follow other match results live** — while playing your match, show a live scores panel for other fixtures in the round | Match Engine | 📋 |
 | **Season end screen** — detect end of round 38; show final standings, champion banner, promoted/relegated teams | Season & Competition | 📋 |
@@ -59,3 +59,4 @@ Top rows are highest priority — order is the priority.
 | Save/load — localStorage auto-save after each match; Novo Jogo resets state | Platform & Meta |
 | EN/PT i18n toggle — key-value lookup; preference persisted in localStorage | Platform & Meta |
 | Persist lineup between matches — last used lineup restored when returning to team view | Tactics & Lineup |
+| Substitutions during match — up to 5 subs per team; sub panel pauses the match, re-simulates remainder; AI makes 0–3 random subs in second half | Match Engine |

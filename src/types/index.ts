@@ -62,7 +62,7 @@ export interface LeagueTableEntry {
 }
 
 /** Match event types */
-export type MatchEventType = 'goal' | 'yellow_card' | 'red_card';
+export type MatchEventType = 'goal' | 'yellow_card' | 'red_card' | 'substitution';
 
 /** Single match event */
 export interface MatchEvent {
@@ -74,6 +74,16 @@ export interface MatchEvent {
   team: 'home' | 'away';
   /** Running score at moment of event, e.g. "1x0" */
   score: string;
+  /** For substitution events: the player being subbed off */
+  playerOutId?: string;
+  playerOutName?: string;
+}
+
+/** A pre-planned substitution for use in simulateSegment */
+export interface PlannedSub {
+  minute: number;
+  playerOut: string; // player ID
+  playerIn: string;  // player ID
 }
 
 /** Full match result */

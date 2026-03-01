@@ -79,8 +79,6 @@
 }
 
 .selected {
-  background: var(--selected-row) !important;
-  color: var(--selected-row-text);
 }
 
 .energyBar {

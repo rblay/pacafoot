@@ -60,10 +60,22 @@ function applyResult(table: LeagueTableEntry[], result: MatchResult): LeagueTabl
   });
 }
 
+/** Fixture info needed to render the live player match. */
+interface PendingPlayerFixture {
+  homeTeamId: string;
+  awayTeamId: string;
+  homeLineup: LineupSelection;
+  awayLineup: LineupSelection;
+  round: number;
+  stadium: string;
+  capacity: number;
+}
+
 function App() {
   const { teams, players, loading, error, gameState, settings, setGameState, setSettings } = useGameData();
   const [currentView, setCurrentView] = useState<ViewType>(() => hasSave() ? 'team' : 'start');
-  const [currentMatchResult, setCurrentMatchResult] = useState<MatchResult | null>(null);
+  const [pendingOtherResults, setPendingOtherResults] = useState<MatchResult[] | null>(null);
+  const [pendingPlayerFixture, setPendingPlayerFixture] = useState<PendingPlayerFixture | null>(null);
   const [, forceRender] = useState(0); // for language re-render
 
   // Generate the full 38-round season schedule once from stable sorted team IDs.
@@ -85,7 +97,8 @@ function App() {
     if (!confirm(t('menu.newGameConfirm'))) return;
     deleteSave();
     setGameState(null);
-    setCurrentMatchResult(null);
+    setPendingOtherResults(null);
+    setPendingPlayerFixture(null);
     setCurrentView('start');
   }, [setGameState]);
 
@@ -109,7 +122,11 @@ function App() {
     forceRender(n => n + 1);
   }, [settings, setSettings]);
 
-  const handlePlay = useCallback((starters: string[], subs: string[], tactics: TacticalConfig) => {
+  /**
+   * Called when the player clicks "Jogar" in TeamView.
+   * Simulates 9 non-player fixtures immediately; defers the player's match to MatchResult.
+   */
+  const handleStartMatch = useCallback((starters: string[], subs: string[], tactics: TacticalConfig) => {
     if (!gameState) return;
     const selectedTeamId = gameState.selectedTeamId;
     const roundIndex = gameState.currentRound - 1;
@@ -122,11 +139,14 @@ function App() {
     );
     if (!playerFixture) return;
 
+    const [pfHome, pfAway] = playerFixture;
     const playerLineup: LineupSelection = { startingXI: starters, subs };
-    const roundResults: MatchResult[] = [];
-    let playerResult: MatchResult | null = null;
 
+    // Simulate all fixtures EXCEPT the player's own match
+    const otherResults: MatchResult[] = [];
     for (const [hId, aId] of roundFixtures) {
+      if (hId === selectedTeamId || aId === selectedTeamId) continue;
+
       const hTeam = getTeamById(teams, hId);
       const aTeam = getTeamById(teams, aId);
       if (!hTeam || !aTeam) continue;
@@ -134,28 +154,61 @@ function App() {
       const hPlayers = getTeamPlayers(players, hId);
       const aPlayers = getTeamPlayers(players, aId);
 
-      const hLineup = hId === selectedTeamId ? playerLineup : autoLineup(hPlayers);
-      const aLineup = aId === selectedTeamId ? playerLineup : autoLineup(aPlayers);
-
-      const result = simulateMatch(
-        hId, aId,
-        hPlayers, aPlayers,
-        hLineup, aLineup,
-        gameState.currentRound,
-        hTeam.stadium,
-        hTeam.capacity,
+      otherResults.push(
+        simulateMatch(
+          hId, aId,
+          hPlayers, aPlayers,
+          autoLineup(hPlayers), autoLineup(aPlayers),
+          gameState.currentRound,
+          hTeam.stadium,
+          hTeam.capacity,
+        )
       );
-
-      roundResults.push(result);
-      if (hId === selectedTeamId || aId === selectedTeamId) {
-        playerResult = result;
-      }
     }
 
-    if (!playerResult) return;
+    // Determine opposing team lineup (AI)
+    const isHome = pfHome === selectedTeamId;
+    const opponentId = isHome ? pfAway : pfHome;
+    const opponentPlayers = getTeamPlayers(players, opponentId);
+    const opponentLineup = autoLineup(opponentPlayers);
 
+    const homeLineup = isHome ? playerLineup : opponentLineup;
+    const awayLineup = isHome ? opponentLineup : playerLineup;
+
+    const homeTeam = getTeamById(teams, pfHome);
+    if (!homeTeam) return;
+
+    // Persist lineup and tactics before navigating
+    const updatedGameState: GameState = {
+      ...gameState,
+      teamLineups: { ...gameState.teamLineups, [selectedTeamId]: playerLineup },
+      teamTactics: { ...gameState.teamTactics, [selectedTeamId]: tactics },
+    };
+    setGameState(updatedGameState);
+
+    setPendingOtherResults(otherResults);
+    setPendingPlayerFixture({
+      homeTeamId: pfHome,
+      awayTeamId: pfAway,
+      homeLineup,
+      awayLineup,
+      round: gameState.currentRound,
+      stadium: homeTeam.stadium,
+      capacity: homeTeam.capacity,
+    });
+    setCurrentView('match_result');
+  }, [teams, players, gameState, setGameState, schedule]);
+
+  /**
+   * Called when the live match finishes and the player clicks "Avançar".
+   * Applies pending other results + the player's result, increments round, saves, navigates to league.
+   */
+  const handleMatchComplete = useCallback((playerResult: MatchResult) => {
+    if (!gameState || !pendingOtherResults || !pendingPlayerFixture) return;
+
+    const allResults = [...pendingOtherResults, playerResult];
     let updatedTable = gameState.leagueTable;
-    for (const result of roundResults) {
+    for (const result of allResults) {
       updatedTable = applyResult(updatedTable, result);
     }
 
@@ -163,21 +216,15 @@ function App() {
       ...gameState,
       leagueTable: sortLeagueTable(updatedTable),
       currentRound: gameState.currentRound + 1,
-      matchResults: [...gameState.matchResults, ...roundResults],
-      teamLineups: { ...gameState.teamLineups, [selectedTeamId]: playerLineup },
-      teamTactics: { ...gameState.teamTactics, [selectedTeamId]: tactics },
+      matchResults: [...gameState.matchResults, ...allResults],
     };
 
     setGameState(newGameState);
     saveGame(newGameState, settings);
-    setCurrentMatchResult(playerResult);
-    setCurrentView('match_result');
-  }, [teams, players, gameState, settings, setGameState, schedule]);
-
-  const handleBackFromMatch = () => {
-    setCurrentMatchResult(null);
+    setPendingOtherResults(null);
+    setPendingPlayerFixture(null);
     setCurrentView('league');
-  };
+  }, [gameState, settings, setGameState, pendingOtherResults, pendingPlayerFixture]);
 
   if (loading) {
     return (
@@ -233,23 +280,28 @@ function App() {
             players={teamPlayers}
             initialLineup={gs.teamLineups[gs.selectedTeamId]}
             initialTactics={gs.teamTactics[gs.selectedTeamId]}
-            onPlay={handlePlay}
+            onPlay={handleStartMatch}
           />
         );
       }
       case 'match_result': {
-        if (!currentMatchResult) return null;
-        const homeTeam = getTeamById(teams, currentMatchResult.homeTeamId);
-        const awayTeam = getTeamById(teams, currentMatchResult.awayTeamId);
+        if (!pendingPlayerFixture) return null;
+        const homeTeam = getTeamById(teams, pendingPlayerFixture.homeTeamId);
+        const awayTeam = getTeamById(teams, pendingPlayerFixture.awayTeamId);
         if (!homeTeam || !awayTeam) return null;
         return (
           <MatchResultView
-            result={currentMatchResult}
             homeTeam={homeTeam}
             awayTeam={awayTeam}
             homePlayers={getTeamPlayers(players, homeTeam.id)}
             awayPlayers={getTeamPlayers(players, awayTeam.id)}
-            onBack={handleBackFromMatch}
+            homeLineup={pendingPlayerFixture.homeLineup}
+            awayLineup={pendingPlayerFixture.awayLineup}
+            round={pendingPlayerFixture.round}
+            stadium={pendingPlayerFixture.stadium}
+            capacity={pendingPlayerFixture.capacity}
+            playerTeamId={gs.selectedTeamId}
+            onMatchComplete={handleMatchComplete}
           />
         );
       }
