@@ -1,0 +1,181 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.panel {
+  background: var(--panel-bg, #c8d8b0);
+  border-top: 3px solid var(--btn-border-light, #e0e0e0);
+  border-left: 3px solid var(--btn-border-light, #e0e0e0);
+  border-bottom: 3px solid var(--btn-border-dark, #888);
+  border-right: 3px solid var(--btn-border-dark, #888);
+  padding: var(--spacing-md);
+  min-width: 480px;
+  max-width: 600px;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family);
+}
+
+.header {
+  font-weight: bold;
+  font-size: var(--font-size-md);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--table-border, #999);
+  text-align: center;
+}
+
+.pendingList {
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--table-border, #999);
+}
+
+.pendingRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 2px 0;
+  font-size: var(--font-size-xs);
+}
+
+.pendingOut {
+  color: #c0000a;
+  font-weight: bold;
+}
+
+.pendingIn {
+  color: #1a7a1a;
+  font-weight: bold;
+  flex: 1;
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.removeBtn:hover {
+  color: #c0000a;
+}
+
+.columns {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.column {
+  flex: 1;
+}
+
+.columnTitle {
+  font-weight: bold;
+  margin-bottom: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--table-border, #999);
+  text-align: center;
+}
+
+.playerRow {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: 2px var(--spacing-xs);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.playerRow:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.selected {
+  background: var(--btn-bg, #a0b870) !important;
+  border: 1px solid var(--btn-border-dark, #888) !important;
+}
+
+.pos {
+  width: 16px;
+  font-weight: bold;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.name {
+  flex: 1;
+}
+
+.rating {
+  color: var(--text-secondary);
+  min-width: 24px;
+  text-align: right;
+}
+
+.empty {
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: var(--spacing-sm) 0;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+}
+
+.confirmBtn,
+.cancelBtn {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  padding: var(--spacing-xs) var(--spacing-lg);
+  cursor: pointer;
+  border: none;
+  border-top: 2px solid var(--btn-border-light, #e0e0e0);
+  border-left: 2px solid var(--btn-border-light, #e0e0e0);
+  border-bottom: 2px solid var(--btn-border-dark, #888);
+  border-right: 2px solid var(--btn-border-dark, #888);
+}
+
+.confirmBtn {
+  background: var(--btn-bg, #a0b870);
+  color: var(--btn-text, #000);
+}
+
+.confirmBtn:hover:not(:disabled) {
+  background: var(--btn-bg-hover, #b0c880);
+}
+
+.confirmBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  background: #c8b898;
+  color: #000;
+}
+
+.cancelBtn:hover {
+  background: #d8c8a8;
+}
+
+.confirmBtn:active:not(:disabled),
+.cancelBtn:active {
+  border-top: 2px solid var(--btn-border-dark, #888);
+  border-left: 2px solid var(--btn-border-dark, #888);
+  border-bottom: 2px solid var(--btn-border-light, #e0e0e0);
+  border-right: 2px solid var(--btn-border-light, #e0e0e0);
+}

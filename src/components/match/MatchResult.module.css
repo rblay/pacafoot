@@ -4,6 +4,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  position: relative;
 }
 
 .panels {
@@ -160,6 +161,7 @@
   display: flex;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 
 .controlBtn {
@@ -185,6 +187,45 @@
   border-left: 2px solid var(--btn-border-dark);
   border-bottom: 2px solid var(--btn-border-light);
   border-right: 2px solid var(--btn-border-light);
+}
+
+.subButton {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  padding: 2px var(--spacing-sm);
+  background: #c8b030;
+  color: #000;
+  border: none;
+  border-top: 2px solid #e8d050;
+  border-left: 2px solid #e8d050;
+  border-bottom: 2px solid #907010;
+  border-right: 2px solid #907010;
+  cursor: pointer;
+}
+
+.subButton:hover {
+  background: #d8c040;
+}
+
+.subButton:active {
+  border-top: 2px solid #907010;
+  border-left: 2px solid #907010;
+  border-bottom: 2px solid #e8d050;
+  border-right: 2px solid #e8d050;
+}
+
+.eventSub {
+  font-style: italic;
+}
+
+.subOut {
+  color: #c0000a;
+  font-weight: bold;
+}
+
+.subInText {
+  color: #1a7a1a;
+  font-weight: bold;
 }
 
 .attendance {
