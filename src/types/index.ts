@@ -148,7 +148,7 @@ export interface GameSettings {
 }
 
 /** Navigation views */
-export type ViewType = 'start' | 'league' | 'team' | 'match_result';
+export type ViewType = 'start' | 'league' | 'team' | 'match_result' | 'squad_view';
 
 /** App-level state */
 export interface AppState {

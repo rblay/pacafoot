@@ -1,0 +1,145 @@
+.container {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Left info panel — mirrors TacticsPanel */
+.panel {
+  width: 240px;
+  min-width: 240px;
+  padding: var(--spacing-lg);
+  color: var(--text-light);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  overflow-y: auto;
+}
+
+.teamName {
+  font-size: var(--font-size-xl);
+  font-weight: bold;
+}
+
+.division {
+  font-size: var(--font-size-xs);
+  opacity: 0.8;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-size-sm);
+}
+
+.infoLabel {
+  font-size: var(--font-size-xs);
+  font-weight: bold;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.capacity {
+  font-size: var(--font-size-xs);
+  opacity: 0.75;
+}
+
+.backButton {
+  font-family: var(--font-family);
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-top: 2px solid var(--btn-border-light);
+  border-left: 2px solid var(--btn-border-light);
+  border-bottom: 2px solid var(--btn-border-dark);
+  border-right: 2px solid var(--btn-border-dark);
+  cursor: pointer;
+  margin-top: auto;
+  text-align: center;
+}
+
+.backButton:hover {
+  background: var(--btn-bg-hover);
+}
+
+.backButton:active {
+  border-top: 2px solid var(--btn-border-dark);
+  border-left: 2px solid var(--btn-border-dark);
+  border-bottom: 2px solid var(--btn-border-light);
+  border-right: 2px solid var(--btn-border-light);
+}
+
+/* Right squad panel */
+.squadPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--table-row-even);
+  overflow: hidden;
+}
+
+.tableScroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+}
+
+.table th {
+  background: #4a7ab5;
+  color: white;
+  font-weight: bold;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  text-align: center;
+  border: 1px solid #3a6aa0;
+  font-size: var(--font-size-xs);
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+}
+
+.table th.nameCol {
+  text-align: left;
+  min-width: 140px;
+}
+
+.table td {
+  padding: 1px var(--spacing-sm);
+  text-align: center;
+  border-bottom: 1px solid var(--table-border);
+  white-space: nowrap;
+}
+
+.table td.nameCol {
+  text-align: left;
+}
+
+.rowEven { background: var(--table-row-even); }
+.rowOdd  { background: var(--table-row-odd); }
+
+.energyBar {
+  display: inline-block;
+  width: 40px;
+  height: 8px;
+  background: var(--energy-bar-bg);
+  vertical-align: middle;
+}
+
+.energyFill {
+  height: 100%;
+  background: var(--energy-bar-fill);
+}
+
+.posG { color: #cc9900; font-weight: bold; }
+.posL { color: #0066cc; font-weight: bold; }
+.posZ { color: #006600; font-weight: bold; }
+.posM { color: #cc6600; font-weight: bold; }
+.posA { color: #cc0000; font-weight: bold; }
