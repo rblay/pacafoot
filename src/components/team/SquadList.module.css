@@ -134,6 +134,30 @@
 .jerseyStarter svg { fill: #22aa44; stroke: #116622; stroke-width: 0.5px; }
 .jerseySub svg { fill: #ddcc00; stroke: #aa9900; stroke-width: 0.5px; }
 
+.jerseySuspended {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.susLabel {
+  font-family: var(--font-family);
+  font-size: 8px;
+  font-weight: bold;
+  color: #cc0000;
+  letter-spacing: 0.5px;
+}
+
+.suspended {
+  background: rgba(180, 0, 0, 0.08) !important;
+  color: #888;
+  font-style: italic;
+}
+
+/* Yellow card count colours — 0=neutral, 1=yellow, 2=orange (one away) */
+.yellow0 { color: #888; }
+.yellow1 { color: #c8a000; font-weight: bold; }
+.yellow2 { color: #cc5500; font-weight: bold; }
+
 .limitBanner {
   background: #aa0000;
   color: #fff;

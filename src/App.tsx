@@ -14,13 +14,19 @@ import { getTeamById, getTeamPlayers } from './utils/dataLoader';
 import { simulateMatch } from './engine/simulation';
 import { generateSchedule } from './engine/fixtures';
 import { sortLeagueTable, saveGame, deleteSave, createDefaultGameState, hasSave } from './utils/storage';
+import { applyMatchCards, isSuspended } from './engine/suspensions';
 import { setLanguage, t } from './locales/i18n';
 import type { Language } from './locales/i18n';
 import type { ViewType, TacticalConfig, MatchResult, GameState, LineupSelection, LeagueTableEntry, Player } from './types';
 
-/** Auto-select the best available lineup for an AI-controlled team. */
-function autoLineup(teamPlayers: Player[]): LineupSelection {
-  const sorted = [...teamPlayers].sort((a, b) => b.rating - a.rating);
+/** Auto-select the best available lineup for an AI-controlled team, skipping suspended players. */
+function autoLineup(
+  teamPlayers: Player[],
+  playerStats: Record<string, import('./types').PlayerSeasonStats> = {},
+  currentRound = 0,
+): LineupSelection {
+  const available = teamPlayers.filter(p => !isSuspended(playerStats[p.id], currentRound));
+  const sorted = [...available].sort((a, b) => b.rating - a.rating);
   return {
     startingXI: sorted.slice(0, 11).map(p => p.id),
     subs: sorted.slice(11, 18).map(p => p.id),
@@ -166,7 +172,8 @@ function App() {
         simulateMatch(
           hId, aId,
           hPlayers, aPlayers,
-          autoLineup(hPlayers), autoLineup(aPlayers),
+          autoLineup(hPlayers, gameState.playerStats, gameState.currentRound),
+          autoLineup(aPlayers, gameState.playerStats, gameState.currentRound),
           gameState.currentRound,
           hTeam.stadium,
           hTeam.capacity,
@@ -178,7 +185,7 @@ function App() {
     const isHome = pfHome === selectedTeamId;
     const opponentId = isHome ? pfAway : pfHome;
     const opponentPlayers = getTeamPlayers(players, opponentId);
-    const opponentLineup = autoLineup(opponentPlayers);
+    const opponentLineup = autoLineup(opponentPlayers, gameState.playerStats, gameState.currentRound);
 
     const homeLineup = isHome ? playerLineup : opponentLineup;
     const awayLineup = isHome ? opponentLineup : playerLineup;
@@ -220,11 +227,15 @@ function App() {
       updatedTable = applyResult(updatedTable, result);
     }
 
+    const nextRound = gameState.currentRound + 1;
+    const updatedPlayerStats = applyMatchCards(gameState.playerStats, allResults, nextRound);
+
     const newGameState: GameState = {
       ...gameState,
       leagueTable: sortLeagueTable(updatedTable),
-      currentRound: gameState.currentRound + 1,
+      currentRound: nextRound,
       matchResults: [...gameState.matchResults, ...allResults],
+      playerStats: updatedPlayerStats,
     };
 
     setGameState(newGameState);
@@ -291,12 +302,19 @@ function App() {
       case 'team': {
         if (!selectedTeam) return null;
         const teamPlayers = getTeamPlayers(players, selectedTeam.id);
+        const suspendedIds = new Set(
+          teamPlayers
+            .filter(p => isSuspended(gs.playerStats[p.id], gs.currentRound))
+            .map(p => p.id)
+        );
         return (
           <TeamView
             team={selectedTeam}
             players={teamPlayers}
             initialLineup={gs.teamLineups[gs.selectedTeamId]}
             initialTactics={gs.teamTactics[gs.selectedTeamId]}
+            suspendedIds={suspendedIds}
+            playerStats={gs.playerStats}
             onPlay={handleStartMatch}
           />
         );

@@ -5,12 +5,14 @@ Top rows are highest priority — order is the priority.
 
 | Item | Theme | Status |
 |------|-------|--------|
-| **Auto-lineup from formation** — when a formation is selected, pre-fill the starting XI and bench with the best available players for that shape (e.g. 4-4-2 picks top 2 A, top 4 M, top 4 Z/L, top 1 G); user can still swap manually after | Tactics & Lineup | 📋 |
+| **Auto-lineup from formation** — when a formation is selected, pre-fill the starting XI and bench with the best available players for that shape (e.g. 4-4-2 picks top 2 A, top 4 M, top 4 Z/L, top 1 G); user can still swap manually after | Tactics & Lineup | ✅ |
 | **Substitutions during match** — manager makes up to 3 subs during the minute-by-minute feed; chosen sub pauses the clock, player swapped in affects simulation strength from that minute onward | Match Engine | ✅ |
 | **View other squad details** — clicking a team name in the league table opens a read-only squad/tactics view for that club | Tactics & Lineup | ✅ |
 | **Follow other match results live** — while playing your match, show a live scores panel for other fixtures in the round | Match Engine | ✅ |
-| **Season end screen** — detect end of round 38; show final standings, champion banner, promoted/relegated teams | Season & Competition | 📋 |
-| **Cards and suspensions** — yellow/red card events during simulation; accumulated yellows and reds trigger match bans | Match Engine | 📋 |
+| **Season end screen** — detect end of round 38; show final standings, champion banner, promoted/relegated teams | Season & Competition | ✅ |
+| **Cards and suspensions** — yellow/red card events during simulation; accumulated yellows and reds trigger match bans | Match Engine | ✅ |
+| **Cap red cards per match** — edge case: prevent more than 4 players being sent off in one game (simulation guardrail) | Match Engine | 📋 |
+| **Forfeit due to unavailability** — if a team cannot field 11 players due to suspensions or injuries, they lose the match 3-0 by default | Match Engine | 📋 |
 | **Injuries and recovery** — players can get injured during matches; recovery takes N rounds; injured players unavailable for selection | Squad Management | 📋 |
 | **Transfer market** — buy/sell players between rounds; budget system; AI clubs also make transfers | Squad Management | 📋 |
 | **Real player database** — replace AI-estimated bench players with verified squad data; schema is stable, JSON-only change (football-data.org / API-Football free tier) | Data & Content | 📋 |

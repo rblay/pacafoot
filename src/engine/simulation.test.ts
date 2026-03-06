@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { simulateSegment } from './simulation';
+import { simulateSegment, simulateMatch } from './simulation';
 import type { Player, LineupSelection, PlannedSub } from '../types';
 
 /** Build a minimal Player object for testing */
@@ -170,5 +170,42 @@ describe('simulateSegment', () => {
       { home: 0, away: 0 },
     );
     expect(events).toHaveLength(0);
+  });
+
+  it('second yellow in same match produces a red card event', () => {
+    // Pre-seed homeBooked with h-m1 already booked, then simulate a minute
+    // where we force the yellow to fire by using a rigged segment
+    // Instead: run many full segments and confirm red_card events appear over time
+    let foundSecondYellow = false;
+    for (let i = 0; i < 500; i++) {
+      const events = simulateSegment(
+        1, 90, 'team-a', 'team-b',
+        homePlayers, awayPlayers, homeLineup, awayLineup,
+        { home: 0, away: 0 },
+        [], [], new Set(['h-m1']), // h-m1 already booked
+      );
+      if (events.some(e => e.type === 'red_card' && e.playerId === 'h-m1')) {
+        foundSecondYellow = true;
+        break;
+      }
+    }
+    expect(foundSecondYellow).toBe(true);
+  });
+
+  it('simulateMatch produces red_card events across many simulations', () => {
+    let found = false;
+    for (let i = 0; i < 100; i++) {
+      const result = simulateMatch(
+        'team-a', 'team-b',
+        homePlayers, awayPlayers,
+        homeLineup, awayLineup,
+        1, 'Stadium', 50000,
+      );
+      if (result.events.some(e => e.type === 'red_card')) {
+        found = true;
+        break;
+      }
+    }
+    expect(found).toBe(true);
   });
 });

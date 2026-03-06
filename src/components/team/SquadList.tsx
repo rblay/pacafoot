@@ -1,10 +1,13 @@
 import styles from './SquadList.module.css';
-import type { Player, Position } from '../../types';
+import type { Player, Position, PlayerSeasonStats } from '../../types';
+import { YELLOW_SUSPENSION_THRESHOLD } from '../../engine/suspensions';
 
 interface SquadListProps {
   players: Player[];
   selectedStarters: Set<string>;
   selectedSubs: Set<string>;
+  suspendedIds?: Set<string>;
+  playerStats?: Record<string, PlayerSeasonStats>;
   onTogglePlayer: (playerId: string) => void;
   limitReached?: boolean;
 }
@@ -40,6 +43,8 @@ export default function SquadList({
   players,
   selectedStarters,
   selectedSubs,
+  suspendedIds = new Set(),
+  playerStats = {},
   onTogglePlayer,
   limitReached,
 }: SquadListProps) {
@@ -79,6 +84,7 @@ export default function SquadList({
               <th>Salário</th>
               <th>Passe</th>
               <th>G</th>
+              <th title={`Cartões amarelos (suspensão a cada ${YELLOW_SUSPENSION_THRESHOLD})`}>CA</th>
               <th>Car.</th>
               <th>I</th>
               <th>M</th>
@@ -86,34 +92,40 @@ export default function SquadList({
           </thead>
           <tbody>
             {sortedPlayers.map((player, index) => {
+              const isSuspended = suspendedIds.has(player.id);
               const isStarter = selectedStarters.has(player.id);
               const isSub = selectedSubs.has(player.id);
               const isSelected = isStarter || isSub;
 
-              const jerseyClass = isStarter
-                ? styles.jerseyStarter
-                : isSub
-                  ? styles.jerseySub
-                  : styles.jerseyNone;
+              const jerseyClass = isSuspended
+                ? styles.jerseySuspended
+                : isStarter
+                  ? styles.jerseyStarter
+                  : isSub
+                    ? styles.jerseySub
+                    : styles.jerseyNone;
 
               return (
                 <tr
                   key={player.id}
                   className={
-                    isSelected
-                      ? styles.selected
-                      : index % 2 === 0
-                        ? styles.rowEven
-                        : styles.rowOdd
+                    isSuspended
+                      ? styles.suspended
+                      : isSelected
+                        ? styles.selected
+                        : index % 2 === 0
+                          ? styles.rowEven
+                          : styles.rowOdd
                   }
                 >
                   <td className={styles.jerseyCol}>
                     <button
                       className={`${styles.jerseyBtn} ${jerseyClass}`}
                       onClick={() => onTogglePlayer(player.id)}
-                      title={isStarter ? 'Titular' : isSub ? 'Reserva' : 'Não selecionado'}
+                      disabled={isSuspended}
+                      title={isSuspended ? 'Suspenso' : isStarter ? 'Titular' : isSub ? 'Reserva' : 'Não selecionado'}
                     >
-                      <JerseyIcon />
+                      {isSuspended ? <span className={styles.susLabel}>SUS</span> : <JerseyIcon />}
                     </button>
                   </td>
                   <td className={POS_CLASS[player.position]}>{player.position}</td>
@@ -131,6 +143,9 @@ export default function SquadList({
                   <td>{formatSalary(player.salary)}</td>
                   <td>{player.passRating}</td>
                   <td>{player.goals}</td>
+                  <td className={styles[`yellow${Math.min(playerStats[player.id]?.yellowCards ?? 0, YELLOW_SUSPENSION_THRESHOLD - 1)}`]}>
+                    {playerStats[player.id]?.yellowCards || '—'}
+                  </td>
                   <td>{player.characteristics.join('/')}</td>
                   <td>{player.age}</td>
                   <td>{player.matchesPlayed}</td>

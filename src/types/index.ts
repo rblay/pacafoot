@@ -133,6 +133,8 @@ export interface PlayerSeasonStats {
   redCards: number;
   matchesPlayed: number;
   energy: number;
+  /** Round the player is suspended and cannot play */
+  suspendedForRound?: number;
 }
 
 /** Save file structure */
