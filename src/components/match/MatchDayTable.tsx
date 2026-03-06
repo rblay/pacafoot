@@ -16,6 +16,7 @@ interface MatchDayTableProps {
   onViewMatch: (homeTeamId: string, awayTeamId: string) => void;
   onTogglePause: () => void;
   onSubClick: () => void;
+  onSkip: () => void;
   onAdvance: () => void;
 }
 
@@ -41,7 +42,7 @@ export default function MatchDayTable({
   playerHomeTeamId, playerAwayTeamId, playerEvents,
   otherResults, allTeams, displayedMinute,
   isPaused, isFinished, canSub, round,
-  onViewMatch, onTogglePause, onSubClick, onAdvance,
+  onViewMatch, onTogglePause, onSubClick, onSkip, onAdvance,
 }: MatchDayTableProps) {
   const teamMap = new Map(allTeams.map(t => [t.id, t]));
 
@@ -59,6 +60,9 @@ export default function MatchDayTable({
             <>
               <button className={styles.controlBtn} onClick={onTogglePause} title={isPaused ? 'Continuar' : 'Pausar'}>
                 {isPaused ? '▶' : '⏸'}
+              </button>
+              <button className={styles.controlBtn} onClick={onSkip} title="Pular para o fim">
+                ⏭
               </button>
               {canSub && (
                 <button className={styles.subBtn} onClick={onSubClick}>
@@ -119,13 +123,19 @@ export default function MatchDayTable({
         })}
       </div>
 
-      {isFinished && (
-        <div className={styles.footer}>
-          <button className={styles.advanceBtn} onClick={onAdvance}>
-            Avançar »
-          </button>
-        </div>
-      )}
+      <div className={styles.footer}>
+        {isFinished
+          ? (
+            <button className={styles.advanceBtn} onClick={onAdvance}>
+              Avançar »
+            </button>
+          ) : (
+            <button className={styles.advanceBtn} onClick={onSkip}>
+              Pular para o fim »
+            </button>
+          )
+        }
+      </div>
     </div>
   );
 }

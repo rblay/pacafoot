@@ -339,6 +339,7 @@ export default function MatchResult({
             onViewMatch={handleViewMatch}
             onTogglePause={() => setIsPaused(p => !p)}
             onSubClick={handleSubButtonClick}
+            onSkip={() => setDisplayedMinute(90)}
             onAdvance={handleAdvance}
           />
         )

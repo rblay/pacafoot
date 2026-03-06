@@ -8,6 +8,7 @@ import LeagueTable from './components/league/LeagueTable';
 import TeamView from './components/team/TeamView';
 import SquadView from './components/team/SquadView';
 import MatchResultView from './components/match/MatchResult';
+import SeasonEndScreen from './components/season/SeasonEndScreen';
 import { useGameData } from './hooks/useGameData';
 import { getTeamById, getTeamPlayers } from './utils/dataLoader';
 import { simulateMatch } from './engine/simulation';
@@ -230,7 +231,7 @@ function App() {
     saveGame(newGameState, settings);
     setPendingOtherResults(null);
     setPendingPlayerFixture(null);
-    setCurrentView('league');
+    setCurrentView(newGameState.currentRound > 38 ? 'season_end' : 'league');
   }, [gameState, settings, setGameState, pendingOtherResults, pendingPlayerFixture]);
 
   if (loading) {
@@ -269,6 +270,14 @@ function App() {
 
   const renderView = () => {
     switch (currentView) {
+      case 'season_end':
+        return (
+          <SeasonEndScreen
+            leagueTable={gs.leagueTable}
+            teams={teams}
+            onNewGame={handleNewGame}
+          />
+        );
       case 'league':
         return (
           <LeagueTable
@@ -276,6 +285,7 @@ function App() {
             teams={teams}
             onTeamClick={handleTeamClick}
             onPrepareMatch={() => setCurrentView('team')}
+            isSeasonOver={gs.currentRound > 38}
           />
         );
       case 'team': {
