@@ -1,0 +1,187 @@
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-green);
+  padding: var(--spacing-md) var(--spacing-lg);
+  overflow: hidden;
+}
+
+.header {
+  color: var(--text-light);
+  font-size: var(--font-size-md);
+  font-weight: bold;
+  padding-bottom: var(--spacing-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  margin-bottom: 6px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.clock {
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  letter-spacing: 2px;
+  min-width: 40px;
+  text-align: right;
+}
+
+.matchList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+}
+
+.matchRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.matchRow:nth-child(even) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.playerMatchRow {
+  background: rgba(255, 210, 0, 0.12) !important;
+  outline: 1px solid rgba(255, 210, 0, 0.5);
+}
+
+/* Colored team name box — the main visual element */
+.teamBox {
+  width: 160px;
+  min-width: 160px;
+  padding: 2px 5px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  line-height: 18px;
+}
+
+.teamBox:hover {
+  filter: brightness(1.12);
+}
+
+.scoreCell {
+  width: 52px;
+  min-width: 52px;
+  text-align: center;
+  color: white;
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.eventCell {
+  flex: 1;
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.88);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.footer {
+  padding-top: var(--spacing-sm);
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Header controls */
+.controlBtn {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-top: 2px solid var(--btn-border-light);
+  border-left: 2px solid var(--btn-border-light);
+  border-bottom: 2px solid var(--btn-border-dark);
+  border-right: 2px solid var(--btn-border-dark);
+  cursor: pointer;
+}
+
+.controlBtn:hover {
+  background: var(--btn-bg-hover);
+}
+
+.subBtn {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  background: #c8b030;
+  color: #000;
+  border: none;
+  border-top: 2px solid #e8d050;
+  border-left: 2px solid #e8d050;
+  border-bottom: 2px solid #907010;
+  border-right: 2px solid #907010;
+  cursor: pointer;
+}
+
+.subBtn:hover {
+  background: #d8c040;
+}
+
+.advanceBtn {
+  font-family: var(--font-family);
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  padding: var(--spacing-sm) var(--spacing-xl);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-top: 2px solid var(--btn-border-light);
+  border-left: 2px solid var(--btn-border-light);
+  border-bottom: 2px solid var(--btn-border-dark);
+  border-right: 2px solid var(--btn-border-dark);
+  cursor: pointer;
+}
+
+.advanceBtn:hover {
+  background: var(--btn-bg-hover);
+}
+
+.miniYellow {
+  display: inline-block;
+  width: 7px;
+  height: 9px;
+  background: #f5c000;
+  border: 1px solid #cc9900;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.miniRed {
+  display: inline-block;
+  width: 7px;
+  height: 9px;
+  background: #cc0000;
+  border: 1px solid #990000;
+  border-radius: 1px;
+  flex-shrink: 0;
+}

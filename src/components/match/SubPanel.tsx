@@ -127,7 +127,7 @@ export default function SubPanel({ starters, benchRemaining, onConfirm, onCancel
             Confirmar{pendingSubs.length > 0 ? ` (${pendingSubs.length})` : ''}
           </button>
           <button className={styles.cancelBtn} onClick={onCancel}>
-            Cancelar
+            {pendingSubs.length > 0 ? 'Cancelar' : 'Continuar'}
           </button>
         </div>
       </div>

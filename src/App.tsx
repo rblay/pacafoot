@@ -319,6 +319,9 @@ function App() {
             stadium={pendingPlayerFixture.stadium}
             capacity={pendingPlayerFixture.capacity}
             playerTeamId={gs.selectedTeamId}
+            otherResults={pendingOtherResults ?? []}
+            allTeams={teams}
+            allPlayers={players}
             onMatchComplete={handleMatchComplete}
           />
         );
