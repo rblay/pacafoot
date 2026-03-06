@@ -6,6 +6,7 @@ interface LeagueTableProps {
   teams: Team[];
   onTeamClick: (teamId: string) => void;
   onPrepareMatch: () => void;
+  isSeasonOver?: boolean;
 }
 
 const TABS = ['Nacional', 'Estadual', 'Libertadores', 'Sul-Americana'];
@@ -16,7 +17,7 @@ function getRowClass(position: number): string {
   return position % 2 === 0 ? styles.rowEven : styles.rowOdd;
 }
 
-export default function LeagueTable({ leagueTable, teams, onTeamClick, onPrepareMatch }: LeagueTableProps) {
+export default function LeagueTable({ leagueTable, teams, onTeamClick, onPrepareMatch, isSeasonOver = false }: LeagueTableProps) {
   const teamMap = new Map(teams.map(t => [t.id, t]));
 
   return (
@@ -80,11 +81,13 @@ export default function LeagueTable({ leagueTable, teams, onTeamClick, onPrepare
           </tbody>
         </table>
       </div>
-      <div className={styles.footer}>
-        <button className={styles.actionButton} onClick={onPrepareMatch}>
-          Preparar próximo jogo »
-        </button>
-      </div>
+      {!isSeasonOver && (
+        <div className={styles.footer}>
+          <button className={styles.actionButton} onClick={onPrepareMatch}>
+            Preparar próximo jogo »
+          </button>
+        </div>
+      )}
     </div>
   );
 }

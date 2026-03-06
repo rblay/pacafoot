@@ -64,5 +64,10 @@
   "status.version": "Pacafoot v0.1",
   "save.saved": "Jogo salvo!",
   "save.newGame": "Novo Jogo",
-  "save.continue": "Continuar"
+  "save.continue": "Continuar",
+  "season.champion": "Campeão",
+  "season.finalStandings": "Classificação Final — Série A",
+  "season.legend.champion": "Campeão",
+  "season.legend.libertadores": "Libertadores (1º–4º)",
+  "season.legend.relegated": "Rebaixado (17º–20º)"
 }
