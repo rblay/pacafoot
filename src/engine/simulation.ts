@@ -20,16 +20,11 @@ export function simulateMatch(
   stadium: string,
   capacity: number,
 ): MatchResult {
-  const homeXI = homePlayers.filter(p => homeLineup.startingXI.includes(p.id));
-  const awayXI = awayPlayers.filter(p => awayLineup.startingXI.includes(p.id));
+  let homeXI = homePlayers.filter(p => homeLineup.startingXI.includes(p.id));
+  let awayXI = awayPlayers.filter(p => awayLineup.startingXI.includes(p.id));
 
-  const homeStrength = calculateTeamStrength(homeXI) * 1.05; // home advantage
-  const awayStrength = calculateTeamStrength(awayXI);
-
-  const homeAttack = calculateAttackStrength(homeXI);
-  const awayAttack = calculateAttackStrength(awayXI);
-  const homeDefense = calculateDefenseStrength(homeXI);
-  const awayDefense = calculateDefenseStrength(awayXI);
+  const homeBooked = new Set<string>();
+  const awayBooked = new Set<string>();
 
   const events: MatchEvent[] = [];
   let homeScore = 0;
@@ -38,21 +33,19 @@ export function simulateMatch(
   for (let minute = 1; minute <= 90; minute++) {
     const half: 1 | 2 = minute <= 45 ? 1 : 2;
 
-    // Home goal chance: based on home attack vs away defense
-    // Base prob per minute ~0.014 (about 1.3 goals/game per team)
+    const homeStrength = calculateTeamStrength(homeXI) * 1.05;
+    const awayStrength = calculateTeamStrength(awayXI);
+    const homeAttack = calculateAttackStrength(homeXI);
+    const awayAttack = calculateAttackStrength(awayXI);
+    const homeDefense = calculateDefenseStrength(homeXI);
+    const awayDefense = calculateDefenseStrength(awayXI);
+
+    // Home goal chance
     const homeGoalProb = 0.014 * (homeAttack / Math.max(awayDefense, 1)) * (homeStrength / 70);
     if (Math.random() < homeGoalProb) {
       homeScore++;
       const scorer = pickScorer(homeXI);
-      events.push({
-        minute,
-        half,
-        type: 'goal',
-        playerId: scorer.id,
-        playerName: scorer.name,
-        team: 'home',
-        score: `${homeScore}x${awayScore}`,
-      });
+      events.push({ minute, half, type: 'goal', playerId: scorer.id, playerName: scorer.name, team: 'home', score: `${homeScore}x${awayScore}` });
     }
 
     // Away goal chance
@@ -60,58 +53,27 @@ export function simulateMatch(
     if (Math.random() < awayGoalProb) {
       awayScore++;
       const scorer = pickScorer(awayXI);
-      events.push({
-        minute,
-        half,
-        type: 'goal',
-        playerId: scorer.id,
-        playerName: scorer.name,
-        team: 'away',
-        score: `${homeScore}x${awayScore}`,
-      });
+      events.push({ minute, half, type: 'goal', playerId: scorer.id, playerName: scorer.name, team: 'away', score: `${homeScore}x${awayScore}` });
     }
 
-    // Yellow card chance (~4 per game total)
-    if (Math.random() < 0.022) {
-      const team: 'home' | 'away' = Math.random() < 0.5 ? 'home' : 'away';
-      const xi = team === 'home' ? homeXI : awayXI;
-      const player = xi[Math.floor(Math.random() * xi.length)];
-      events.push({
-        minute,
-        half,
-        type: 'yellow_card',
-        playerId: player.id,
-        playerName: player.name,
-        team,
-        score: `${homeScore}x${awayScore}`,
-      });
-    }
+    // Cards
+    const { cardEvents, homeRedIds, awayRedIds } = simulateCardMinute(
+      minute, half, homeXI, awayXI, homeBooked, awayBooked, homeScore, awayScore,
+    );
+    events.push(...cardEvents);
+    homeXI = homeXI.filter(p => !homeRedIds.includes(p.id));
+    awayXI = awayXI.filter(p => !awayRedIds.includes(p.id));
   }
 
-  // Attendance: 60-95% of capacity
   const attendance = Math.round(capacity * (0.6 + Math.random() * 0.35));
 
-  return {
-    round,
-    homeTeamId,
-    awayTeamId,
-    homeScore,
-    awayScore,
-    events,
-    homeLineup,
-    awayLineup,
-    attendance,
-    stadium,
-  };
+  return { round, homeTeamId, awayTeamId, homeScore, awayScore, events, homeLineup, awayLineup, attendance, stadium };
 }
 
 /** Pick a goal scorer weighted by position (attackers score more) */
 function pickScorer(players: Player[]): Player {
   const weights: Record<string, number> = { A: 5, M: 3, L: 1, Z: 1, G: 0.1 };
-  const weighted = players.map(p => ({
-    player: p,
-    weight: (weights[p.position] ?? 1) * (p.rating / 70),
-  }));
+  const weighted = players.map(p => ({ player: p, weight: (weights[p.position] ?? 1) * (p.rating / 70) }));
   const total = weighted.reduce((sum, w) => sum + w.weight, 0);
   let rand = Math.random() * total;
   for (const w of weighted) {
@@ -119,6 +81,63 @@ function pickScorer(players: Player[]): Player {
     if (rand <= 0) return w.player;
   }
   return players[0];
+}
+
+/**
+ * Simulate card events for a single minute.
+ * - Yellow card: ~0.022/min per team (~2 yellows/game per team, ~4 total)
+ * - Second yellow in same match → red card
+ * - Direct red: ~0.0015/min per team (~0.14/game per team, ~0.28 total)
+ * Returns the card events and the IDs of any players who received a red (to remove from XI).
+ */
+function simulateCardMinute(
+  minute: number,
+  half: 1 | 2,
+  homeXI: Player[],
+  awayXI: Player[],
+  homeBooked: Set<string>,
+  awayBooked: Set<string>,
+  homeScore: number,
+  awayScore: number,
+): { cardEvents: MatchEvent[]; homeRedIds: string[]; awayRedIds: string[] } {
+  const cardEvents: MatchEvent[] = [];
+  const homeRedIds: string[] = [];
+  const awayRedIds: string[] = [];
+  const score = `${homeScore}x${awayScore}`;
+
+  for (const side of ['home', 'away'] as const) {
+    const xi = side === 'home' ? homeXI : awayXI;
+    const booked = side === 'home' ? homeBooked : awayBooked;
+    const reds = side === 'home' ? homeRedIds : awayRedIds;
+
+    if (xi.length === 0) continue;
+
+    // Yellow / second yellow
+    if (Math.random() < 0.022) {
+      const player = xi[Math.floor(Math.random() * xi.length)];
+      if (booked.has(player.id)) {
+        // Second yellow → red
+        cardEvents.push({ minute, half, type: 'red_card', playerId: player.id, playerName: player.name, team: side, score });
+        reds.push(player.id);
+        booked.delete(player.id);
+      } else {
+        cardEvents.push({ minute, half, type: 'yellow_card', playerId: player.id, playerName: player.name, team: side, score });
+        booked.add(player.id);
+      }
+    }
+
+    // Direct red
+    if (Math.random() < 0.0015) {
+      const player = xi[Math.floor(Math.random() * xi.length)];
+      if (!reds.includes(player.id)) {
+        cardEvents.push({ minute, half, type: 'red_card', playerId: player.id, playerName: player.name, team: side, score });
+        reds.push(player.id);
+        booked.delete(player.id);
+      }
+    }
+  }
+
+  return { cardEvents, homeRedIds, awayRedIds };
 }
 
 /**
@@ -144,16 +163,15 @@ export function simulateSegment(
   currentScore: { home: number; away: number },
   homePlannedSubs: PlannedSub[] = [],
   awayPlannedSubs: PlannedSub[] = [],
+  homeBooked: Set<string> = new Set(),
+  awayBooked: Set<string> = new Set(),
 ): MatchEvent[] {
-  // Build mutable ID→Player lookup maps
   const homePlayerMap = new Map(homePlayers.map(p => [p.id, p]));
   const awayPlayerMap = new Map(awayPlayers.map(p => [p.id, p]));
 
-  // Mutable active XIs (IDs only; convert to Player[] per minute)
   let homeXIIds = [...homeLineup.startingXI];
   let awayXIIds = [...awayLineup.startingXI];
 
-  // Track which planned subs have been applied
   const homeSubsRemaining = [...homePlannedSubs];
   const awaySubsRemaining = [...awayPlannedSubs];
 
@@ -164,7 +182,7 @@ export function simulateSegment(
   for (let minute = fromMinute; minute <= toMinute; minute++) {
     const half: 1 | 2 = minute <= 45 ? 1 : 2;
 
-    // Apply any planned subs that fire this minute
+    // Apply planned home subs
     for (const sub of homeSubsRemaining.filter(s => s.minute === minute)) {
       const idx = homeXIIds.indexOf(sub.playerOut);
       if (idx !== -1) {
@@ -172,24 +190,13 @@ export function simulateSegment(
         const playerIn = homePlayerMap.get(sub.playerIn);
         const playerOut = homePlayerMap.get(sub.playerOut);
         if (playerIn && playerOut) {
-          events.push({
-            minute,
-            half,
-            type: 'substitution',
-            playerId: playerIn.id,
-            playerName: playerIn.name,
-            playerOutId: playerOut.id,
-            playerOutName: playerOut.name,
-            team: 'home',
-            score: `${homeScore}x${awayScore}`,
-          });
+          events.push({ minute, half, type: 'substitution', playerId: playerIn.id, playerName: playerIn.name, playerOutId: playerOut.id, playerOutName: playerOut.name, team: 'home', score: `${homeScore}x${awayScore}` });
         }
       }
     }
-    // Remove fired home subs
-    homeSubsRemaining.splice(0, homeSubsRemaining.length,
-      ...homeSubsRemaining.filter(s => s.minute !== minute));
+    homeSubsRemaining.splice(0, homeSubsRemaining.length, ...homeSubsRemaining.filter(s => s.minute !== minute));
 
+    // Apply planned away subs
     for (const sub of awaySubsRemaining.filter(s => s.minute === minute)) {
       const idx = awayXIIds.indexOf(sub.playerOut);
       if (idx !== -1) {
@@ -197,24 +204,12 @@ export function simulateSegment(
         const playerIn = awayPlayerMap.get(sub.playerIn);
         const playerOut = awayPlayerMap.get(sub.playerOut);
         if (playerIn && playerOut) {
-          events.push({
-            minute,
-            half,
-            type: 'substitution',
-            playerId: playerIn.id,
-            playerName: playerIn.name,
-            playerOutId: playerOut.id,
-            playerOutName: playerOut.name,
-            team: 'away',
-            score: `${homeScore}x${awayScore}`,
-          });
+          events.push({ minute, half, type: 'substitution', playerId: playerIn.id, playerName: playerIn.name, playerOutId: playerOut.id, playerOutName: playerOut.name, team: 'away', score: `${homeScore}x${awayScore}` });
         }
       }
     }
-    awaySubsRemaining.splice(0, awaySubsRemaining.length,
-      ...awaySubsRemaining.filter(s => s.minute !== minute));
+    awaySubsRemaining.splice(0, awaySubsRemaining.length, ...awaySubsRemaining.filter(s => s.minute !== minute));
 
-    // Resolve current Player arrays from active IDs
     const homeXI = homeXIIds.map(id => homePlayerMap.get(id)).filter(Boolean) as Player[];
     const awayXI = awayXIIds.map(id => awayPlayerMap.get(id)).filter(Boolean) as Player[];
 
@@ -230,15 +225,7 @@ export function simulateSegment(
     if (Math.random() < homeGoalProb) {
       homeScore++;
       const scorer = pickScorer(homeXI);
-      events.push({
-        minute,
-        half,
-        type: 'goal',
-        playerId: scorer.id,
-        playerName: scorer.name,
-        team: 'home',
-        score: `${homeScore}x${awayScore}`,
-      });
+      events.push({ minute, half, type: 'goal', playerId: scorer.id, playerName: scorer.name, team: 'home', score: `${homeScore}x${awayScore}` });
     }
 
     // Away goal
@@ -246,36 +233,17 @@ export function simulateSegment(
     if (Math.random() < awayGoalProb) {
       awayScore++;
       const scorer = pickScorer(awayXI);
-      events.push({
-        minute,
-        half,
-        type: 'goal',
-        playerId: scorer.id,
-        playerName: scorer.name,
-        team: 'away',
-        score: `${homeScore}x${awayScore}`,
-      });
+      events.push({ minute, half, type: 'goal', playerId: scorer.id, playerName: scorer.name, team: 'away', score: `${homeScore}x${awayScore}` });
     }
 
-    // Yellow card (~4 per game total)
-    if (Math.random() < 0.022) {
-      const team: 'home' | 'away' = Math.random() < 0.5 ? 'home' : 'away';
-      const xi = team === 'home' ? homeXI : awayXI;
-      if (xi.length > 0) {
-        const player = xi[Math.floor(Math.random() * xi.length)];
-        events.push({
-          minute,
-          half,
-          type: 'yellow_card',
-          playerId: player.id,
-          playerName: player.name,
-          team,
-          score: `${homeScore}x${awayScore}`,
-        });
-      }
-    }
+    // Cards
+    const { cardEvents, homeRedIds, awayRedIds } = simulateCardMinute(
+      minute, half, homeXI, awayXI, homeBooked, awayBooked, homeScore, awayScore,
+    );
+    events.push(...cardEvents);
+    homeXIIds = homeXIIds.filter(id => !homeRedIds.includes(id));
+    awayXIIds = awayXIIds.filter(id => !awayRedIds.includes(id));
   }
 
   return events;
 }
-

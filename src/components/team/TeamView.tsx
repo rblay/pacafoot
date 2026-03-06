@@ -3,13 +3,15 @@ import styles from './TeamView.module.css';
 import TacticsPanel from './TacticsPanel';
 import SquadList from './SquadList';
 import { autoLineup, detectFormation } from '../../engine/lineup';
-import type { Team, Player, TacticalConfig, Position, LineupSelection } from '../../types';
+import type { Team, Player, TacticalConfig, Position, LineupSelection, PlayerSeasonStats } from '../../types';
 
 interface TeamViewProps {
   team: Team;
   players: Player[];
   initialLineup?: LineupSelection;
   initialTactics?: TacticalConfig;
+  suspendedIds?: Set<string>;
+  playerStats?: Record<string, PlayerSeasonStats>;
   onPlay: (starters: string[], subs: string[], tactics: TacticalConfig) => void;
 }
 
@@ -42,12 +44,12 @@ function validateLineup(players: Player[], starterIds: Set<string>): boolean {
   );
 }
 
-export default function TeamView({ team, players, initialLineup, initialTactics, onPlay }: TeamViewProps) {
+export default function TeamView({ team, players, initialLineup, initialTactics, suspendedIds = new Set(), playerStats = {}, onPlay }: TeamViewProps) {
   const [selectedStarters, setSelectedStarters] = useState<Set<string>>(
-    () => new Set(initialLineup?.startingXI ?? [])
+    () => new Set((initialLineup?.startingXI ?? []).filter(id => !suspendedIds.has(id)))
   );
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(
-    () => new Set(initialLineup?.subs ?? [])
+    () => new Set((initialLineup?.subs ?? []).filter(id => !suspendedIds.has(id)))
   );
   const [tactics, setTactics] = useState<TacticalConfig>(() => {
     if (initialTactics) return initialTactics;
@@ -78,6 +80,7 @@ export default function TeamView({ team, players, initialLineup, initialTactics,
   const limitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTogglePlayer = useCallback((playerId: string) => {
+    if (suspendedIds.has(playerId)) return;
     const isStarter = selectedStarters.has(playerId);
     const isSub = selectedSubs.has(playerId);
 
@@ -143,6 +146,8 @@ export default function TeamView({ team, players, initialLineup, initialTactics,
         players={players}
         selectedStarters={selectedStarters}
         selectedSubs={selectedSubs}
+        suspendedIds={suspendedIds}
+        playerStats={playerStats}
         onTogglePlayer={handleTogglePlayer}
         limitReached={limitReached}
       />
