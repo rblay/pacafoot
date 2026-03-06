@@ -6,6 +6,7 @@ import StatusBar from './components/layout/StatusBar';
 import StartScreen from './components/start/StartScreen';
 import LeagueTable from './components/league/LeagueTable';
 import TeamView from './components/team/TeamView';
+import SquadView from './components/team/SquadView';
 import MatchResultView from './components/match/MatchResult';
 import { useGameData } from './hooks/useGameData';
 import { getTeamById, getTeamPlayers } from './utils/dataLoader';
@@ -74,6 +75,7 @@ interface PendingPlayerFixture {
 function App() {
   const { teams, players, loading, error, gameState, settings, setGameState, setSettings } = useGameData();
   const [currentView, setCurrentView] = useState<ViewType>(() => hasSave() ? 'team' : 'start');
+  const [viewingTeamId, setViewingTeamId] = useState<string | null>(null);
   const [pendingOtherResults, setPendingOtherResults] = useState<MatchResult[] | null>(null);
   const [pendingPlayerFixture, setPendingPlayerFixture] = useState<PendingPlayerFixture | null>(null);
   const [, forceRender] = useState(0); // for language re-render
@@ -106,8 +108,13 @@ function App() {
     setCurrentView(view);
   };
 
-  const handleTeamClick = (_teamId: string) => {
-    setCurrentView('team');
+  const handleTeamClick = (teamId: string) => {
+    if (teamId === gameState?.selectedTeamId) {
+      setCurrentView('team');
+    } else {
+      setViewingTeamId(teamId);
+      setCurrentView('squad_view');
+    }
   };
 
   const handleSave = useCallback(() => {
@@ -281,6 +288,17 @@ function App() {
             initialLineup={gs.teamLineups[gs.selectedTeamId]}
             initialTactics={gs.teamTactics[gs.selectedTeamId]}
             onPlay={handleStartMatch}
+          />
+        );
+      }
+      case 'squad_view': {
+        const viewTeam = viewingTeamId ? getTeamById(teams, viewingTeamId) : null;
+        if (!viewTeam) return null;
+        return (
+          <SquadView
+            team={viewTeam}
+            players={getTeamPlayers(players, viewTeam.id)}
+            onBack={() => setCurrentView('league')}
           />
         );
       }
