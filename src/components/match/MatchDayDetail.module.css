@@ -226,6 +226,16 @@
   font-style: italic;
 }
 
+.eventInjury {
+  font-style: italic;
+  color: #7a3a00;
+}
+
+.injuryText {
+  color: #cc6600;
+  font-weight: bold;
+}
+
 .eventMinute {
   color: var(--text-secondary);
   min-width: 30px;
@@ -243,6 +253,34 @@
   background: #f5c000;
   border: 1px solid #cc9900;
   border-radius: 1px;
+}
+
+.redCard {
+  display: inline-block;
+  width: 8px;
+  height: 11px;
+  background: #cc0000;
+  border: 1px solid #880000;
+  border-radius: 1px;
+}
+
+.redCardText {
+  color: #cc0000;
+  font-weight: bold;
+}
+
+.injuryIcon {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 1px solid #cc4400;
+  border-radius: 1px;
+  color: #cc0000;
+  font-weight: bold;
+  font-size: 10px;
+  line-height: 12px;
+  text-align: center;
 }
 
 .subOut {

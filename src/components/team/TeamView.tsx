@@ -11,7 +11,9 @@ interface TeamViewProps {
   initialLineup?: LineupSelection;
   initialTactics?: TacticalConfig;
   suspendedIds?: Set<string>;
+  injuredIds?: Set<string>;
   playerStats?: Record<string, PlayerSeasonStats>;
+  currentRound?: number;
   onPlay: (starters: string[], subs: string[], tactics: TacticalConfig) => void;
 }
 
@@ -44,12 +46,13 @@ function validateLineup(players: Player[], starterIds: Set<string>): boolean {
   );
 }
 
-export default function TeamView({ team, players, initialLineup, initialTactics, suspendedIds = new Set(), playerStats = {}, onPlay }: TeamViewProps) {
+export default function TeamView({ team, players, initialLineup, initialTactics, suspendedIds = new Set(), injuredIds = new Set(), playerStats = {}, currentRound, onPlay }: TeamViewProps) {
+  const unavailableIds = useMemo(() => new Set([...suspendedIds, ...injuredIds]), [suspendedIds, injuredIds]);
   const [selectedStarters, setSelectedStarters] = useState<Set<string>>(
-    () => new Set((initialLineup?.startingXI ?? []).filter(id => !suspendedIds.has(id)))
+    () => new Set((initialLineup?.startingXI ?? []).filter(id => !unavailableIds.has(id)))
   );
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(
-    () => new Set((initialLineup?.subs ?? []).filter(id => !suspendedIds.has(id)))
+    () => new Set((initialLineup?.subs ?? []).filter(id => !unavailableIds.has(id)))
   );
   const [tactics, setTactics] = useState<TacticalConfig>(() => {
     if (initialTactics) return initialTactics;
@@ -71,16 +74,17 @@ export default function TeamView({ team, players, initialLineup, initialTactics,
 
   const handleTacticsChange = useCallback((newTactics: TacticalConfig) => {
     if (newTactics.formation !== 'custom' && newTactics.formation !== tactics.formation) {
-      const lineup = autoLineup(players, newTactics.formation);
+      const available = players.filter(p => !unavailableIds.has(p.id));
+      const lineup = autoLineup(available, newTactics.formation);
       setSelectedStarters(new Set(lineup.startingXI));
       setSelectedSubs(new Set(lineup.subs));
     }
     setTactics(newTactics);
-  }, [tactics.formation, players]);
+  }, [tactics.formation, players, unavailableIds]);
   const limitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTogglePlayer = useCallback((playerId: string) => {
-    if (suspendedIds.has(playerId)) return;
+    if (unavailableIds.has(playerId)) return;
     const isStarter = selectedStarters.has(playerId);
     const isSub = selectedSubs.has(playerId);
 
@@ -147,7 +151,9 @@ export default function TeamView({ team, players, initialLineup, initialTactics,
         selectedStarters={selectedStarters}
         selectedSubs={selectedSubs}
         suspendedIds={suspendedIds}
+        injuredIds={injuredIds}
         playerStats={playerStats}
+        currentRound={currentRound}
         onTogglePlayer={handleTogglePlayer}
         limitReached={limitReached}
       />

@@ -21,6 +21,38 @@
   font-family: var(--font-family);
 }
 
+.panelInjury {
+  background: #e8c8b0 !important;
+  border-top-color: #e8d0b8 !important;
+  border-left-color: #e8d0b8 !important;
+  border-bottom-color: #a06030 !important;
+  border-right-color: #a06030 !important;
+}
+
+.injuryNotice {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.injuryPlayerName {
+  font-size: var(--font-size-lg, 18px);
+  font-weight: bold;
+  color: #7a1000;
+  margin-bottom: 2px;
+}
+
+.injurySubtitle {
+  font-size: var(--font-size-xs);
+  color: #7a3000;
+  font-style: italic;
+}
+
+.injuredRow {
+  opacity: 0.6;
+  cursor: default !important;
+  font-style: italic;
+}
+
 .header {
   font-weight: bold;
   font-size: var(--font-size-md);

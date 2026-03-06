@@ -125,24 +125,32 @@ export default function MatchDayDetail({
             {visibleEvents.map((event, i) => (
               <div
                 key={i}
-                className={`${styles.event} ${event.type === 'goal' ? styles.eventGoal : ''} ${event.type === 'substitution' ? styles.eventSub : ''}`}
+                className={`${styles.event} ${event.type === 'goal' ? styles.eventGoal : ''} ${event.type === 'substitution' ? styles.eventSub : ''} ${event.type === 'injury' ? styles.eventInjury : ''}`}
               >
                 <span className={styles.eventMinute}>{event.minute}&apos;</span>
                 <span className={styles.eventIcon}>
                   {event.type === 'goal' && '⚽'}
                   {event.type === 'yellow_card' && <span className={styles.yellowCard} />}
+                  {event.type === 'red_card' && <span className={styles.redCard} />}
+                  {event.type === 'injury' && <span className={styles.injuryIcon}>+</span>}
                 </span>
                 <span>
                   {event.type === 'goal' && `${event.score} - `}
                   {event.type === 'goal' && event.playerName}
                   {event.type === 'goal' && ` - ${event.half}°`}
                   {event.type === 'yellow_card' && event.playerName}
+                  {event.type === 'red_card' && (
+                    <span className={styles.redCardText}>{event.playerName}</span>
+                  )}
                   {event.type === 'substitution' && (
                     <>
                       <span className={styles.subOut}>{event.playerOutName} →</span>
                       {' '}
                       <span className={styles.subInText}>← {event.playerName}</span>
                     </>
+                  )}
+                  {event.type === 'injury' && (
+                    <span className={styles.injuryText}>{event.playerName}</span>
                   )}
                 </span>
               </div>
