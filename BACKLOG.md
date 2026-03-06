@@ -13,7 +13,7 @@ Top rows are highest priority — order is the priority.
 | **Cards and suspensions** — yellow/red card events during simulation; accumulated yellows and reds trigger match bans | Match Engine | ✅ |
 | **Cap red cards per match** — edge case: prevent more than 4 players being sent off in one game (simulation guardrail) | Match Engine | 📋 |
 | **Forfeit due to unavailability** — if a team cannot field 11 players due to suspensions or injuries, they lose the match 3-0 by default | Match Engine | 📋 |
-| **Injuries and recovery** — players can get injured during matches; recovery takes N rounds; injured players unavailable for selection | Squad Management | 📋 |
+| **Injuries and recovery** — players can get injured during matches; recovery takes N rounds; injured players unavailable for selection | Squad Management | ✅ |
 | **Transfer market** — buy/sell players between rounds; budget system; AI clubs also make transfers | Squad Management | 📋 |
 | **Real player database** — replace AI-estimated bench players with verified squad data; schema is stable, JSON-only change (football-data.org / API-Football free tier) | Data & Content | 📋 |
 | **Improve simulation logic** — incorporate formation, play style (defensive/attacking), and pressing intensity into goal probability | Match Engine | 📋 |

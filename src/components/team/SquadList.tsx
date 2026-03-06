@@ -7,7 +7,9 @@ interface SquadListProps {
   selectedStarters: Set<string>;
   selectedSubs: Set<string>;
   suspendedIds?: Set<string>;
+  injuredIds?: Set<string>;
   playerStats?: Record<string, PlayerSeasonStats>;
+  currentRound?: number;
   onTogglePlayer: (playerId: string) => void;
   limitReached?: boolean;
 }
@@ -44,7 +46,9 @@ export default function SquadList({
   selectedStarters,
   selectedSubs,
   suspendedIds = new Set(),
+  injuredIds = new Set(),
   playerStats = {},
+  currentRound,
   onTogglePlayer,
   limitReached,
 }: SquadListProps) {
@@ -93,17 +97,21 @@ export default function SquadList({
           <tbody>
             {sortedPlayers.map((player, index) => {
               const isSuspended = suspendedIds.has(player.id);
+              const isInjuredPlayer = injuredIds.has(player.id);
+              const isUnavailable = isSuspended || isInjuredPlayer;
               const isStarter = selectedStarters.has(player.id);
               const isSub = selectedSubs.has(player.id);
               const isSelected = isStarter || isSub;
 
               const jerseyClass = isSuspended
                 ? styles.jerseySuspended
-                : isStarter
-                  ? styles.jerseyStarter
-                  : isSub
-                    ? styles.jerseySub
-                    : styles.jerseyNone;
+                : isInjuredPlayer
+                  ? styles.jerseyInjured
+                  : isStarter
+                    ? styles.jerseyStarter
+                    : isSub
+                      ? styles.jerseySub
+                      : styles.jerseyNone;
 
               return (
                 <tr
@@ -111,25 +119,38 @@ export default function SquadList({
                   className={
                     isSuspended
                       ? styles.suspended
-                      : isSelected
-                        ? styles.selected
-                        : index % 2 === 0
-                          ? styles.rowEven
-                          : styles.rowOdd
+                      : isInjuredPlayer
+                        ? styles.injured
+                        : isSelected
+                          ? styles.selected
+                          : index % 2 === 0
+                            ? styles.rowEven
+                            : styles.rowOdd
                   }
                 >
                   <td className={styles.jerseyCol}>
                     <button
                       className={`${styles.jerseyBtn} ${jerseyClass}`}
                       onClick={() => onTogglePlayer(player.id)}
-                      disabled={isSuspended}
-                      title={isSuspended ? 'Suspenso' : isStarter ? 'Titular' : isSub ? 'Reserva' : 'Não selecionado'}
+                      disabled={isUnavailable}
+                      title={isSuspended ? 'Suspenso' : isInjuredPlayer ? 'Lesionado' : isStarter ? 'Titular' : isSub ? 'Reserva' : 'Não selecionado'}
                     >
-                      {isSuspended ? <span className={styles.susLabel}>SUS</span> : <JerseyIcon />}
+                      {isSuspended
+                        ? <span className={styles.susLabel}>SUS</span>
+                        : isInjuredPlayer
+                          ? <span className={styles.lesLabel} />
+                          : <JerseyIcon />}
                     </button>
                   </td>
                   <td className={POS_CLASS[player.position]}>{player.position}</td>
-                  <td className={styles.nameCol}>{player.name}</td>
+                  <td className={styles.nameCol}>
+                    {player.name}
+                    {isInjuredPlayer && currentRound !== undefined && playerStats[player.id]?.injuredUntilRound !== undefined && (
+                      <span className={styles.injuryRounds}>
+                        {' '}({playerStats[player.id].injuredUntilRound! - currentRound + 1}j)
+                      </span>
+                    )}
+                  </td>
                   <td>{player.role}</td>
                   <td>{player.rating}</td>
                   <td>

@@ -139,6 +139,11 @@
   opacity: 0.7;
 }
 
+.jerseyInjured {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .susLabel {
   font-family: var(--font-family);
   font-size: 8px;
@@ -147,10 +152,55 @@
   letter-spacing: 0.5px;
 }
 
+.lesLabel {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 1px solid #cc0000;
+  border-radius: 1px;
+  position: relative;
+}
+
+.lesLabel::before,
+.lesLabel::after {
+  content: '';
+  position: absolute;
+  background: #cc0000;
+  border-radius: 1px;
+}
+
+.lesLabel::before {
+  width: 2px;
+  height: 9px;
+  top: 1px;
+  left: 5px;
+}
+
+.lesLabel::after {
+  width: 9px;
+  height: 2px;
+  top: 5px;
+  left: 1px;
+}
+
 .suspended {
   background: rgba(180, 0, 0, 0.08) !important;
   color: #888;
   font-style: italic;
+}
+
+.injured {
+  background: rgba(180, 100, 0, 0.08) !important;
+  color: #888;
+  font-style: italic;
+}
+
+.injuryRounds {
+  font-size: var(--font-size-xs);
+  color: #cc6600;
+  font-style: normal;
+  font-weight: bold;
 }
 
 /* Yellow card count colours — 0=neutral, 1=yellow, 2=orange (one away) */

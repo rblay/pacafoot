@@ -13,13 +13,17 @@ interface SubPanelProps {
   onConfirm: (subs: PendingSub[]) => void;
   onCancel: () => void;
   subsUsed: number;
+  /** If set, this player is locked as the forced "out" (injury sub) */
+  forcedOutPlayerId?: string;
+  forcedOutPlayerName?: string;
 }
 
 const MAX_SUBS = 5;
 
-export default function SubPanel({ starters, benchRemaining, onConfirm, onCancel, subsUsed }: SubPanelProps) {
+export default function SubPanel({ starters, benchRemaining, onConfirm, onCancel, subsUsed, forcedOutPlayerId, forcedOutPlayerName }: SubPanelProps) {
   const [pendingSubs, setPendingSubs] = useState<PendingSub[]>([]);
-  const [selectedOut, setSelectedOut] = useState<string | null>(null);
+  // Pre-select the injured player as "out" if there's a forced injury sub
+  const [selectedOut, setSelectedOut] = useState<string | null>(forcedOutPlayerId ?? null);
   const [selectedIn, setSelectedIn] = useState<string | null>(null);
 
   const maxThisSession = MAX_SUBS - subsUsed;
@@ -35,6 +39,8 @@ export default function SubPanel({ starters, benchRemaining, onConfirm, onCancel
 
   // Auto-queue the pair as soon as both players are selected
   const handleSelectOut = (id: string) => {
+    // Forced-out player cannot be deselected
+    if (forcedOutPlayerId && id === forcedOutPlayerId) return;
     const newOut = selectedOut === id ? null : id;
     if (newOut && selectedIn) {
       setPendingSubs(prev => [...prev, { playerOut: newOut, playerIn: selectedIn }]);
@@ -62,10 +68,17 @@ export default function SubPanel({ starters, benchRemaining, onConfirm, onCancel
 
   return (
     <div className={styles.overlay}>
-      <div className={styles.panel}>
+      <div className={`${styles.panel} ${forcedOutPlayerId ? styles.panelInjury : ''}`}>
         <div className={styles.header}>
-          Substituições ({subsUsed + pendingSubs.length}/{MAX_SUBS})
+          {forcedOutPlayerId
+            ? `Lesao - ${forcedOutPlayerName ?? ''}`
+            : `Substituicoes (${subsUsed + pendingSubs.length}/${MAX_SUBS})`}
         </div>
+        {forcedOutPlayerId && (
+          <div className={styles.injuryNotice}>
+            <div className={styles.injurySubtitle}>Escolha o substituto ou continue sem ele</div>
+          </div>
+        )}
 
         {pendingSubs.length > 0 && (
           <div className={styles.pendingList}>
@@ -84,17 +97,20 @@ export default function SubPanel({ starters, benchRemaining, onConfirm, onCancel
           <div className={styles.columns}>
             <div className={styles.column}>
               <div className={styles.columnTitle}>↑ Sai</div>
-              {availableStarters.map(p => (
-                <div
-                  key={p.id}
-                  className={`${styles.playerRow} ${selectedOut === p.id ? styles.selected : ''}`}
-                  onClick={() => handleSelectOut(p.id)}
-                >
-                  <span className={styles.pos}>{p.position}</span>
-                  <span className={styles.name}>{p.name}</span>
-                  <span className={styles.rating}>{p.rating}</span>
-                </div>
-              ))}
+              {availableStarters.map(p => {
+                const isForced = p.id === forcedOutPlayerId;
+                return (
+                  <div
+                    key={p.id}
+                    className={`${styles.playerRow} ${selectedOut === p.id ? styles.selected : ''} ${isForced ? styles.injuredRow : ''}`}
+                    onClick={() => handleSelectOut(p.id)}
+                  >
+                    <span className={styles.pos}>{p.position}</span>
+                    <span className={styles.name}>{p.name}{isForced ? ' [LES]' : ''}</span>
+                    <span className={styles.rating}>{p.rating}</span>
+                  </div>
+                );
+              })}
             </div>
 
             <div className={styles.column}>

@@ -62,7 +62,7 @@ export interface LeagueTableEntry {
 }
 
 /** Match event types */
-export type MatchEventType = 'goal' | 'yellow_card' | 'red_card' | 'substitution';
+export type MatchEventType = 'goal' | 'yellow_card' | 'red_card' | 'substitution' | 'injury';
 
 /** Single match event */
 export interface MatchEvent {
@@ -135,6 +135,8 @@ export interface PlayerSeasonStats {
   energy: number;
   /** Round the player is suspended and cannot play */
   suspendedForRound?: number;
+  /** Round until which the player is injured and cannot play (exclusive — player returns when currentRound > injuredUntilRound) */
+  injuredUntilRound?: number;
 }
 
 /** Save file structure */

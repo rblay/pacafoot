@@ -29,6 +29,26 @@ const POSITION_ORDER: Record<string, number> = { G: 0, L: 1, Z: 2, M: 3, A: 4 };
 const byPosition = (a: Player | undefined, b: Player | undefined) =>
   (POSITION_ORDER[a?.position ?? ''] ?? 9) - (POSITION_ORDER[b?.position ?? ''] ?? 9);
 
+type Position = 'G' | 'L' | 'Z' | 'M' | 'A';
+const POSITION_FALLBACK: Record<Position, Position[]> = {
+  G: ['G', 'L', 'Z', 'M', 'A'],
+  L: ['L', 'Z', 'M', 'A', 'G'],
+  Z: ['Z', 'L', 'M', 'A', 'G'],
+  M: ['M', 'A', 'Z', 'L', 'G'],
+  A: ['A', 'M', 'Z', 'L', 'G'],
+};
+
+function pickBestSubForPosition(benchIds: string[], position: Position, pMap: Map<string, Player>): string | null {
+  for (const pos of POSITION_FALLBACK[position]) {
+    const candidates = benchIds
+      .map(id => pMap.get(id))
+      .filter((p): p is Player => p !== undefined && p.position === pos)
+      .sort((a, b) => b.rating - a.rating);
+    if (candidates.length > 0) return candidates[0].id;
+  }
+  return null;
+}
+
 function generateAiSubPlan(players: Player[], lineup: LineupSelection): PlannedSub[] {
   const count = Math.floor(Math.random() * 4);
   if (count === 0) return [];
@@ -86,6 +106,8 @@ export default function MatchResult({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const attendance = useMemo(() => Math.round(capacity * (0.6 + Math.random() * 0.35)), []);
 
+  const playerSide = isHomeTeam ? 'home' : 'away';
+
   const [events, setEvents] = useState<MatchEvent[]>(() =>
     simulateSegment(
       1, 90,
@@ -95,6 +117,8 @@ export default function MatchResult({
       { home: 0, away: 0 },
       isHomeTeam ? [] : aiSubPlan,
       isHomeTeam ? aiSubPlan : [],
+      new Set(), new Set(),
+      playerSide,
     )
   );
 
@@ -108,6 +132,7 @@ export default function MatchResult({
   const [displayedMinute, setDisplayedMinute] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [showSubPanel, setShowSubPanel] = useState(false);
+  const [pendingInjuryPlayerId, setPendingInjuryPlayerId] = useState<string | null>(null);
   const [view, setView] = useState<'table' | 'detail'>('table');
   const [viewingMatchKey, setViewingMatchKey] = useState<string | null>(null);
 
@@ -130,6 +155,38 @@ export default function MatchResult({
       if (subsUsed < MAX_SUBS && benchRemaining.length > 0) {
         setShowSubPanel(true);
       }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedMinute]);
+
+  // Injury detection: pause and prompt sub when player's team has an injury event
+  useEffect(() => {
+    if (isFinished || displayedMinute === 0) return;
+    const injuryEvent = events.find(
+      e => e.minute === displayedMinute && e.type === 'injury' && e.team === playerSide,
+    );
+    if (!injuryEvent) return;
+
+    setPendingInjuryPlayerId(injuryEvent.playerId);
+    setIsPaused(true);
+    setViewingMatchKey(null);
+    setView('detail');
+
+    if (subsUsed < MAX_SUBS && benchRemaining.length > 0) {
+      // Remove injured player from lineup so sub panel shows 10 starters;
+      // replacement will be appended when confirmed
+      setCurrentPlayerLineup(prev => ({
+        ...prev,
+        startingXI: prev.startingXI.filter(id => id !== injuryEvent.playerId),
+      }));
+      setShowSubPanel(true);
+    } else {
+      // No subs — remove injured player from lineup (man down), auto-resume handled by user
+      setCurrentPlayerLineup(prev => ({
+        ...prev,
+        startingXI: prev.startingXI.filter(id => id !== injuryEvent.playerId),
+      }));
+      setPendingInjuryPlayerId(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedMinute]);
@@ -196,11 +253,24 @@ export default function MatchResult({
         playerOutId: sub.playerOut, playerOutName: outObj.name,
         team: isHomeTeam ? 'home' : 'away', score,
       });
-      newStartingXI = newStartingXI.map(id => id === sub.playerOut ? sub.playerIn : id);
+      if (newStartingXI.includes(sub.playerOut)) {
+        // Normal sub: replace out with in
+        newStartingXI = newStartingXI.map(id => id === sub.playerOut ? sub.playerIn : id);
+      } else {
+        // Injury sub: injured player already removed from XI — just add the replacement
+        newStartingXI = [...newStartingXI, sub.playerIn];
+      }
       newBenchRemaining = newBenchRemaining.filter(id => id !== sub.playerIn);
     }
 
-    const newPlayerLineup: LineupSelection = { startingXI: newStartingXI, subs: currentPlayerLineup.subs };
+    // For injury subs: the injured player was already removed from currentPlayerLineup.startingXI
+    // before the sub panel opened. Remove them from newStartingXI too (in case of re-sim ordering).
+    const injuredId = pendingInjuryPlayerId;
+    const finalStartingXI = injuredId
+      ? newStartingXI.filter(id => id !== injuredId)
+      : newStartingXI;
+
+    const newPlayerLineup: LineupSelection = { startingXI: finalStartingXI, subs: currentPlayerLineup.subs };
     const nextMinute = Math.min(displayedMinute + 1, 90);
     const aiSubsRemaining = aiSubPlan.filter(s => s.minute > displayedMinute);
     const newHomeLineup = isHomeTeam ? newPlayerLineup : homeLineup;
@@ -215,6 +285,8 @@ export default function MatchResult({
           { home: currentHomeScore, away: currentAwayScore },
           isHomeTeam ? [] : aiSubsRemaining,
           isHomeTeam ? aiSubsRemaining : [],
+          new Set(), new Set(),
+          playerSide,
         )
       : [];
 
@@ -222,6 +294,7 @@ export default function MatchResult({
     setCurrentPlayerLineup(newPlayerLineup);
     setBenchRemaining(newBenchRemaining);
     setSubsUsed(n => n + subs.length);
+    setPendingInjuryPlayerId(null);
     setShowSubPanel(false);
     setIsPaused(false);
     setView('table');
@@ -229,10 +302,76 @@ export default function MatchResult({
   };
 
   const handleSubCancel = () => {
+    if (pendingInjuryPlayerId) {
+      // Injury sub cancelled — remove injured player from lineup (man down)
+      setCurrentPlayerLineup(prev => ({
+        ...prev,
+        startingXI: prev.startingXI.filter(id => id !== pendingInjuryPlayerId),
+      }));
+      setPendingInjuryPlayerId(null);
+    }
     setShowSubPanel(false);
     setIsPaused(false);
     setView('table');
     setViewingMatchKey(null);
+  };
+
+  const handleSkip = () => {
+    // Find all pre-computed injury events for the player's team after current minute
+    const futureInjuries = events.filter(
+      e => e.minute > displayedMinute && e.type === 'injury' && e.team === playerSide,
+    );
+
+    if (futureInjuries.length === 0 || subsUsed >= MAX_SUBS || benchRemaining.length === 0) {
+      setDisplayedMinute(90);
+      return;
+    }
+
+    // Auto-pick best positional sub for each injury, respecting the sub limit
+    let tempBench = [...benchRemaining];
+    let tempStartingXI = [...currentPlayerLineup.startingXI];
+    let tempSubsUsed = subsUsed;
+
+    for (const injury of futureInjuries) {
+      if (tempSubsUsed >= MAX_SUBS || tempBench.length === 0) break;
+      const injuredPlayer = playerMap.get(injury.playerId);
+      if (!injuredPlayer) continue;
+      const subInId = pickBestSubForPosition(tempBench, injuredPlayer.position as Position, playerMap);
+      if (!subInId) break;
+      tempStartingXI = tempStartingXI.filter(id => id !== injury.playerId);
+      tempStartingXI = [...tempStartingXI, subInId];
+      tempBench = tempBench.filter(id => id !== subInId);
+      tempSubsUsed++;
+    }
+
+    const eventsUpToNow = events.filter(e => e.minute <= displayedMinute);
+    const currentHomeScore = eventsUpToNow.filter(e => e.type === 'goal' && e.team === 'home').length;
+    const currentAwayScore = eventsUpToNow.filter(e => e.type === 'goal' && e.team === 'away').length;
+    const aiSubsRemaining = aiSubPlan.filter(s => s.minute > displayedMinute);
+    const newPlayerLineup: LineupSelection = { startingXI: tempStartingXI, subs: currentPlayerLineup.subs };
+    const newHomeLineup = isHomeTeam ? newPlayerLineup : homeLineup;
+    const newAwayLineup = isHomeTeam ? awayLineup : newPlayerLineup;
+    const nextMinute = Math.min(displayedMinute + 1, 90);
+
+    const newSegmentEvents = simulateSegment(
+      nextMinute, 90,
+      homeTeam.id, awayTeam.id,
+      homePlayers, awayPlayers,
+      newHomeLineup, newAwayLineup,
+      { home: currentHomeScore, away: currentAwayScore },
+      isHomeTeam ? [] : aiSubsRemaining,
+      isHomeTeam ? aiSubsRemaining : [],
+      new Set(), new Set(),
+      playerSide,
+    );
+
+    setEvents([...eventsUpToNow, ...newSegmentEvents]);
+    setCurrentPlayerLineup(newPlayerLineup);
+    setBenchRemaining(tempBench);
+    setSubsUsed(tempSubsUsed);
+    setPendingInjuryPlayerId(null);
+    setShowSubPanel(false);
+    setDisplayedMinute(90);
   };
 
   const handleAdvance = () => {
@@ -273,7 +412,7 @@ export default function MatchResult({
           onBack={handleCloseDetail}
           onTogglePause={() => setIsPaused(p => !p)}
           onSubClick={handleSubButtonClick}
-          onSkip={() => setDisplayedMinute(90)}
+          onSkip={handleSkip}
           onAdvance={handleAdvance}
         />
       );
@@ -320,6 +459,8 @@ export default function MatchResult({
           onConfirm={handleSubConfirm}
           onCancel={handleSubCancel}
           subsUsed={subsUsed}
+          forcedOutPlayerId={pendingInjuryPlayerId ?? undefined}
+          forcedOutPlayerName={pendingInjuryPlayerId ? playerMap.get(pendingInjuryPlayerId)?.name : undefined}
         />
       )}
       {view === 'table'
@@ -339,7 +480,7 @@ export default function MatchResult({
             onViewMatch={handleViewMatch}
             onTogglePause={() => setIsPaused(p => !p)}
             onSubClick={handleSubButtonClick}
-            onSkip={() => setDisplayedMinute(90)}
+            onSkip={handleSkip}
             onAdvance={handleAdvance}
           />
         )

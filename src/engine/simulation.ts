@@ -2,6 +2,17 @@ import type { Player, MatchEvent, MatchResult, LineupSelection, PlannedSub } fro
 import { calculateTeamStrength, calculateAttackStrength, calculateDefenseStrength } from './teamStrength';
 
 /**
+ * Injury probability per team per minute (~0.003 → ~27% chance per team per match).
+ * Picks a random outfield player (non-GK). Returns the injured player's ID or null.
+ */
+function pickInjuredPlayer(xi: Player[]): Player | null {
+  if (Math.random() >= 0.003) return null;
+  const outfield = xi.filter(p => p.position !== 'G');
+  if (outfield.length === 0) return null;
+  return outfield[Math.floor(Math.random() * outfield.length)];
+}
+
+/**
  * Simulate a full match between two teams.
  *
  * Goal probability per minute is based on:
@@ -25,6 +36,10 @@ export function simulateMatch(
 
   const homeBooked = new Set<string>();
   const awayBooked = new Set<string>();
+
+  // Track bench availability for injury auto-subs
+  let homeAvailableBench = [...homeLineup.subs];
+  let awayAvailableBench = [...awayLineup.subs];
 
   const events: MatchEvent[] = [];
   let homeScore = 0;
@@ -54,6 +69,36 @@ export function simulateMatch(
       awayScore++;
       const scorer = pickScorer(awayXI);
       events.push({ minute, half, type: 'goal', playerId: scorer.id, playerName: scorer.name, team: 'away', score: `${homeScore}x${awayScore}` });
+    }
+
+    // Injuries (AI vs AI — auto-sub from bench if available)
+    const score = `${homeScore}x${awayScore}`;
+    for (const side of ['home', 'away'] as const) {
+      const xi = side === 'home' ? homeXI : awayXI;
+      const bench = side === 'home' ? homeAvailableBench : awayAvailableBench;
+      const injured = pickInjuredPlayer(xi);
+      if (!injured) continue;
+      events.push({ minute, half, type: 'injury', playerId: injured.id, playerName: injured.name, team: side, score });
+      const subInId = bench.find(id => {
+        const pool = side === 'home' ? homePlayers : awayPlayers;
+        return pool.some(p => p.id === id);
+      });
+      if (subInId) {
+        const pool = side === 'home' ? homePlayers : awayPlayers;
+        const subIn = pool.find(p => p.id === subInId)!;
+        events.push({ minute, half, type: 'substitution', playerId: subIn.id, playerName: subIn.name, playerOutId: injured.id, playerOutName: injured.name, team: side, score });
+        if (side === 'home') {
+          homeXI = homeXI.map(p => p.id === injured.id ? subIn : p);
+          homeAvailableBench = homeAvailableBench.filter(id => id !== subInId);
+        } else {
+          awayXI = awayXI.map(p => p.id === injured.id ? subIn : p);
+          awayAvailableBench = awayAvailableBench.filter(id => id !== subInId);
+        }
+      } else {
+        // No bench player — play man down
+        if (side === 'home') homeXI = homeXI.filter(p => p.id !== injured.id);
+        else awayXI = awayXI.filter(p => p.id !== injured.id);
+      }
     }
 
     // Cards
@@ -165,6 +210,8 @@ export function simulateSegment(
   awayPlannedSubs: PlannedSub[] = [],
   homeBooked: Set<string> = new Set(),
   awayBooked: Set<string> = new Set(),
+  /** Which side is the human player — injuries on that side are NOT auto-subbed (UI handles it) */
+  playerSide: 'home' | 'away' | null = null,
 ): MatchEvent[] {
   const homePlayerMap = new Map(homePlayers.map(p => [p.id, p]));
   const awayPlayerMap = new Map(awayPlayers.map(p => [p.id, p]));
@@ -174,6 +221,10 @@ export function simulateSegment(
 
   const homeSubsRemaining = [...homePlannedSubs];
   const awaySubsRemaining = [...awayPlannedSubs];
+
+  // Bench players not yet used (excludes those already planned to come on)
+  let homeAvailableBench = homeLineup.subs.filter(id => !homePlannedSubs.some(s => s.playerIn === id));
+  let awayAvailableBench = awayLineup.subs.filter(id => !awayPlannedSubs.some(s => s.playerIn === id));
 
   let homeScore = currentScore.home;
   let awayScore = currentScore.away;
@@ -187,6 +238,7 @@ export function simulateSegment(
       const idx = homeXIIds.indexOf(sub.playerOut);
       if (idx !== -1) {
         homeXIIds[idx] = sub.playerIn;
+        homeAvailableBench = homeAvailableBench.filter(id => id !== sub.playerIn);
         const playerIn = homePlayerMap.get(sub.playerIn);
         const playerOut = homePlayerMap.get(sub.playerOut);
         if (playerIn && playerOut) {
@@ -201,6 +253,7 @@ export function simulateSegment(
       const idx = awayXIIds.indexOf(sub.playerOut);
       if (idx !== -1) {
         awayXIIds[idx] = sub.playerIn;
+        awayAvailableBench = awayAvailableBench.filter(id => id !== sub.playerIn);
         const playerIn = awayPlayerMap.get(sub.playerIn);
         const playerOut = awayPlayerMap.get(sub.playerOut);
         if (playerIn && playerOut) {
@@ -234,6 +287,44 @@ export function simulateSegment(
       awayScore++;
       const scorer = pickScorer(awayXI);
       events.push({ minute, half, type: 'goal', playerId: scorer.id, playerName: scorer.name, team: 'away', score: `${homeScore}x${awayScore}` });
+    }
+
+    // Injuries
+    const segScore = `${homeScore}x${awayScore}`;
+    for (const side of ['home', 'away'] as const) {
+      const xiIds = side === 'home' ? homeXIIds : awayXIIds;
+      const playerMap = side === 'home' ? homePlayerMap : awayPlayerMap;
+      const xi = xiIds.map(id => playerMap.get(id)).filter(Boolean) as Player[];
+      const injured = pickInjuredPlayer(xi);
+      if (!injured) continue;
+      events.push({ minute, half, type: 'injury', playerId: injured.id, playerName: injured.name, team: side, score: segScore });
+
+      const isPlayerSide = side === playerSide;
+      const bench = side === 'home' ? homeAvailableBench : awayAvailableBench;
+
+      if (isPlayerSide) {
+        // Player team: remove from XI, no auto-sub — the UI handles the sub decision
+        if (side === 'home') homeXIIds = homeXIIds.filter(id => id !== injured.id);
+        else awayXIIds = awayXIIds.filter(id => id !== injured.id);
+      } else {
+        // AI team: auto-sub from bench if available
+        const subInId = bench.find(id => playerMap.has(id));
+        if (subInId) {
+          const subIn = playerMap.get(subInId)!;
+          events.push({ minute, half, type: 'substitution', playerId: subIn.id, playerName: subIn.name, playerOutId: injured.id, playerOutName: injured.name, team: side, score: segScore });
+          if (side === 'home') {
+            homeXIIds = homeXIIds.map(id => id === injured.id ? subInId : id);
+            homeAvailableBench = homeAvailableBench.filter(id => id !== subInId);
+          } else {
+            awayXIIds = awayXIIds.map(id => id === injured.id ? subInId : id);
+            awayAvailableBench = awayAvailableBench.filter(id => id !== subInId);
+          }
+        } else {
+          // No bench — play man down
+          if (side === 'home') homeXIIds = homeXIIds.filter(id => id !== injured.id);
+          else awayXIIds = awayXIIds.filter(id => id !== injured.id);
+        }
+      }
     }
 
     // Cards

@@ -15,6 +15,7 @@ import { simulateMatch } from './engine/simulation';
 import { generateSchedule } from './engine/fixtures';
 import { sortLeagueTable, saveGame, deleteSave, createDefaultGameState, hasSave } from './utils/storage';
 import { applyMatchCards, isSuspended } from './engine/suspensions';
+import { applyMatchInjuries, isInjured } from './engine/injuries';
 import { setLanguage, t } from './locales/i18n';
 import type { Language } from './locales/i18n';
 import type { ViewType, TacticalConfig, MatchResult, GameState, LineupSelection, LeagueTableEntry, Player } from './types';
@@ -25,7 +26,9 @@ function autoLineup(
   playerStats: Record<string, import('./types').PlayerSeasonStats> = {},
   currentRound = 0,
 ): LineupSelection {
-  const available = teamPlayers.filter(p => !isSuspended(playerStats[p.id], currentRound));
+  const available = teamPlayers.filter(p =>
+    !isSuspended(playerStats[p.id], currentRound) && !isInjured(playerStats[p.id], currentRound)
+  );
   const sorted = [...available].sort((a, b) => b.rating - a.rating);
   return {
     startingXI: sorted.slice(0, 11).map(p => p.id),
@@ -228,7 +231,8 @@ function App() {
     }
 
     const nextRound = gameState.currentRound + 1;
-    const updatedPlayerStats = applyMatchCards(gameState.playerStats, allResults, nextRound);
+    const statsAfterCards = applyMatchCards(gameState.playerStats, allResults, nextRound);
+    const updatedPlayerStats = applyMatchInjuries(statsAfterCards, allResults, nextRound);
 
     const newGameState: GameState = {
       ...gameState,
@@ -307,6 +311,11 @@ function App() {
             .filter(p => isSuspended(gs.playerStats[p.id], gs.currentRound))
             .map(p => p.id)
         );
+        const injuredIds = new Set(
+          teamPlayers
+            .filter(p => isInjured(gs.playerStats[p.id], gs.currentRound))
+            .map(p => p.id)
+        );
         return (
           <TeamView
             team={selectedTeam}
@@ -314,7 +323,9 @@ function App() {
             initialLineup={gs.teamLineups[gs.selectedTeamId]}
             initialTactics={gs.teamTactics[gs.selectedTeamId]}
             suspendedIds={suspendedIds}
+            injuredIds={injuredIds}
             playerStats={gs.playerStats}
+            currentRound={gs.currentRound}
             onPlay={handleStartMatch}
           />
         );

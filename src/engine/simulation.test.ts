@@ -208,4 +208,70 @@ describe('simulateSegment', () => {
     }
     expect(found).toBe(true);
   });
+
+  it('simulateMatch produces injury events across many simulations', () => {
+    let found = false;
+    for (let i = 0; i < 200; i++) {
+      const result = simulateMatch(
+        'team-a', 'team-b',
+        homePlayers, awayPlayers,
+        homeLineup, awayLineup,
+        1, 'Stadium', 50000,
+      );
+      if (result.events.some(e => e.type === 'injury')) {
+        found = true;
+        break;
+      }
+    }
+    expect(found).toBe(true);
+  });
+
+  it('simulateSegment emits injury for player side without auto-sub', () => {
+    let foundInjury = false;
+    let foundAutoSub = false;
+    for (let i = 0; i < 500; i++) {
+      const events = simulateSegment(
+        1, 90, 'team-a', 'team-b',
+        homePlayers, awayPlayers,
+        homeLineup, awayLineup,
+        { home: 0, away: 0 },
+        [], [], new Set(), new Set(),
+        'home', // home is player side
+      );
+      const injuryEvent = events.find(e => e.type === 'injury' && e.team === 'home');
+      if (injuryEvent) {
+        foundInjury = true;
+        // No auto-sub should follow for the player's team
+        const subAfterInjury = events.find(
+          e => e.type === 'substitution' && e.team === 'home' && e.minute >= injuryEvent.minute && e.playerOutId === injuryEvent.playerId
+        );
+        if (subAfterInjury) foundAutoSub = true;
+        break;
+      }
+    }
+    expect(foundInjury).toBe(true);
+    expect(foundAutoSub).toBe(false);
+  });
+
+  it('simulateSegment auto-subs for AI team on injury when bench available', () => {
+    let foundInjuryWithSub = false;
+    for (let i = 0; i < 500; i++) {
+      const events = simulateSegment(
+        1, 90, 'team-a', 'team-b',
+        homePlayers, awayPlayers,
+        homeLineup, awayLineup,
+        { home: 0, away: 0 },
+        [], [], new Set(), new Set(),
+        'home', // home is player side; away is AI
+      );
+      const injuryEvent = events.find(e => e.type === 'injury' && e.team === 'away');
+      if (injuryEvent) {
+        const subAfterInjury = events.find(
+          e => e.type === 'substitution' && e.team === 'away' && e.minute === injuryEvent.minute && e.playerOutId === injuryEvent.playerId
+        );
+        if (subAfterInjury) { foundInjuryWithSub = true; break; }
+      }
+    }
+    expect(foundInjuryWithSub).toBe(true);
+  });
 });
